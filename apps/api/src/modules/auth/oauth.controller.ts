@@ -2,13 +2,11 @@ import { Controller, Get, Param, Res } from '@nestjs/common';
 import { ApiExcludeController, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators';
+import { resolveWebOrigins } from '../../common/utils/web-origins';
 import { AuthService } from './auth.service';
 
 function allowedWebOrigins(): string[] {
-  return (process.env.WEB_URL ?? 'http://localhost:3000')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return resolveWebOrigins();
 }
 
 /** Only allow OAuth post-login redirects to configured WEB_URL origins. */

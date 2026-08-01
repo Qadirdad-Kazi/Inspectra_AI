@@ -35,7 +35,4 @@ services:
       - key: AUTH_SECRET
         generateValue: true
       - key: WEB_URL
-        # Exact Vercel origin(s), no trailing slash. Example:
-        # https://inspectra-tan.vercel.app
-        # Multiple: https://inspectra-tan.vercel.app,https://inspectra.ai
-        sync: false
+        value: https://inspectra-tan.vercel.app

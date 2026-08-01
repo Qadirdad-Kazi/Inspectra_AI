@@ -12,6 +12,7 @@ import {
 } from './common/middleware/http-observability';
 import { createLogger } from '@inspectra/logger';
 import { incCounter } from './common/metrics/registry';
+import { resolveWebOrigins } from './common/utils/web-origins';
 
 const log = createLogger({
   name: 'api',
@@ -32,10 +33,7 @@ async function bootstrap() {
   });
 
   // Comma-separated frontend origins for CORS + OAuth redirects (no trailing slash)
-  const corsOrigins = (process.env.WEB_URL ?? 'http://localhost:3000')
-    .split(',')
-    .map((s) => s.trim().replace(/\/$/, ''))
-    .filter(Boolean);
+  const corsOrigins = resolveWebOrigins();
 
   // Trust reverse proxy (nginx / ingress) for correct client IPs + rate limits
   const expressApp = app.getHttpAdapter().getInstance();
