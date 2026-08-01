@@ -44,3 +44,15 @@ temp
 
 .DS_Store
 **/.DS_Store
+
+# Vercel monorepo-root deploy artifacts (scripts/vercel-web-build.sh)
+/app
+/components
+/lib
+/public
+/styles
+/next.config.mjs
+/tsconfig.json
+/tsconfig.next-deploy.json
+/postcss.config.mjs
+/next-env.d.ts

@@ -1,24 +1,79 @@
 #!/usr/bin/env bash
-# Build Next.js web app for Vercel when Root Directory is the monorepo root (.).
-# Keep artifacts in apps/web/.next and symlink to repo-root .next so Vercel can find
-# routes-manifest without breaking NFT / SWC traces (copy breaks those).
+# Build @inspectra/web for Vercel with Root Directory = monorepo root.
+# Next.js is built at the repo root (where Vercel expects .next) by linking
+# the app source dirs from apps/web — avoids broken NFT traces from copy/symlink of .next.
 set -euo pipefail
 
-pnpm --filter @inspectra/web... build
+echo "==> Building web workspace dependencies"
+pnpm --filter @inspectra/web^... build
 
-if [ ! -f apps/web/.next/routes-manifest.json ]; then
-  echo "ERROR: apps/web/.next/routes-manifest.json missing after build" >&2
-  ls -la apps/web/.next 2>/dev/null || true
+echo "==> Linking Next.js app directories to monorepo root"
+for d in app components lib public styles; do
+  rm -rf "$d"
+  ln -sfn "apps/web/$d" "$d"
+done
+
+cp -f apps/web/postcss.config.mjs ./postcss.config.mjs
+cp -f apps/web/next-env.d.ts ./next-env.d.ts
+
+# Deploy-time Next config at repo root (not committed)
+cat > next.config.mjs <<'EOF'
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.dirname(fileURLToPath(import.meta.url));
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ['@inspectra/ui', '@inspectra/sdk'],
+  outputFileTracingRoot: root,
+};
+export default nextConfig;
+EOF
+
+# Deploy-time tsconfig so Next typecheck resolves @/* at repo root
+cat > tsconfig.next-deploy.json <<'EOF'
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", "apps", "packages"]
+}
+EOF
+cp -f tsconfig.next-deploy.json tsconfig.json
+
+echo "==> Running next build at monorepo root"
+pnpm exec next build
+
+if [ ! -f .next/routes-manifest.json ]; then
+  echo "ERROR: .next/routes-manifest.json missing" >&2
+  ls -la .next || true
   exit 1
 fi
 
-rm -rf .next
-ln -sfn apps/web/.next .next
-
-mkdir -p public
-if [ -d apps/web/public ]; then
-  cp -R apps/web/public/. public/
-fi
-
-echo "Linked $(pwd)/.next -> $(pwd)/apps/web/.next"
-test -f .next/routes-manifest.json
+echo "==> Vercel Next.js build OK"
