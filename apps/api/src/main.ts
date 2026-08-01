@@ -31,7 +31,12 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log'],
   });
 
-  const webOrigin = process.env.WEB_URL ?? 'http://localhost:3000';
+  // Comma-separated frontend origins for CORS + OAuth redirects (no trailing slash)
+  const corsOrigins = (process.env.WEB_URL ?? 'http://localhost:3000')
+    .split(',')
+    .map((s) => s.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+  const webOrigin = corsOrigins[0] ?? 'http://localhost:3000';
 
   // Trust reverse proxy (nginx / ingress) for correct client IPs + rate limits
   const expressApp = app.getHttpAdapter().getInstance();
@@ -50,12 +55,13 @@ async function bootstrap() {
               scriptSrc: ["'self'"],
               styleSrc: ["'self'", "'unsafe-inline'"],
               imgSrc: ["'self'", 'data:', 'https:'],
-              connectSrc: ["'self'", webOrigin],
+              connectSrc: ["'self'", ...corsOrigins],
               frameAncestors: ["'none'"],
             },
           }
         : false,
       crossOriginEmbedderPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
       referrerPolicy: { policy: 'no-referrer' },
       hsts: isProd ? { maxAge: 15552000, includeSubDomains: true } : false,
     }),
@@ -105,7 +111,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: webOrigin.split(',').map((s) => s.trim()),
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -153,7 +159,11 @@ async function bootstrap() {
 
   const port = Number(process.env.API_PORT ?? 4000);
   await app.listen(port);
-  log.info('api listening', { port, env: process.env.NODE_ENV ?? 'development' });
+  log.info('api listening', {
+    port,
+    env: process.env.NODE_ENV ?? 'development',
+    corsOrigins,
+  });
 }
 
 void bootstrap();

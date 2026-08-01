@@ -6,7 +6,7 @@ import { isUnlimitedAuditEmail } from '../../common/utils/unlimited-access';
 
 /**
  * Ensures the unlimited-access owner account exists (email allowlist).
- * Default: qadirdadkazi@gmail.com / PASSWORD1 (override via SEED_OWNER_* env).
+ * Default: qadirdadkazi@gmail.com / PASSWORD12345 (override via SEED_OWNER_* env).
  */
 @Injectable()
 export class OwnerSeedService implements OnModuleInit {
@@ -32,7 +32,7 @@ export class OwnerSeedService implements OnModuleInit {
       return;
     }
 
-    const password = process.env.SEED_OWNER_PASSWORD ?? 'PASSWORD1';
+    const password = process.env.SEED_OWNER_PASSWORD ?? 'PASSWORD12345';
     const name = process.env.SEED_OWNER_NAME ?? 'Qadirdad Kazi';
     const passwordHash = await hashPassword(password);
 
