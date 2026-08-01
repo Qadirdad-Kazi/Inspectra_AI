@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
   "installCommand": "npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @inspectra/web... build"
 }

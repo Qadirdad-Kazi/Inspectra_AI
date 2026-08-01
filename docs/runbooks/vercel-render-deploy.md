@@ -28,12 +28,12 @@ Confirm GitHub `main` includes `packages/web-audit-engine/package.json` (not onl
 
 | Field | Value |
 |--------|--------|
-| Framework Preset | Next.js |
-| Root Directory | **`apps/web`** (required — `next` lives here, not repo root) |
-| Include files outside Root Directory | **Enabled** (needed for `packages/*` workspace deps) |
+| Framework Preset | **Next.js** (not Other / not static) |
+| Root Directory | **`apps/web`** |
+| Include files outside Root Directory | **Enabled** |
 | Install Command | `cd ../.. && npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile` |
 | Build Command | `cd ../.. && pnpm --filter @inspectra/web... build` |
-| Output Directory | *(default)* |
+| Output Directory | **Leave empty** — do not set `public` (Next.js uses `.next`) |
 | Node.js Version | **20.x** |
 
 > Prefer `npm install -g pnpm@9.15.4` over `corepack enable` on Vercel — avoids pnpm `ERR_INVALID_THIS` / registry fetch failures with Corepack.
@@ -141,6 +141,16 @@ git push -u origin main
 ```
 
 Then **Manual Deploy** on Render / redeploy on Vercel so they build the new commit (not `41bcd25`).
+
+### Vercel `No Output Directory named "public"`
+
+Next.js built fine, but the project is treated as static. In Vercel:
+
+1. Framework = **Next.js**
+2. Root Directory = **`apps/web`**
+3. **Output Directory** = clear/empty (remove `public` if set)
+
+Do not set `outputDirectory` to `public` or `apps/web/.next` in `vercel.json`.
 
 ### Vercel `tsc: command not found`
 
