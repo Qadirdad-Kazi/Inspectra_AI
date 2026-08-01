@@ -357,8 +357,8 @@ export function AuditReportView({
           ) : null}
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-baseline justify-between">
+        <div className="flex min-h-0 flex-col gap-3">
+          <div className="flex shrink-0 items-baseline justify-between">
             <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
               Priority actions ({findings.length})
             </h3>
@@ -370,43 +370,45 @@ export function AuditReportView({
                 : 'No prioritized findings on this run.'}
             </div>
           ) : (
-            findings.map((f, idx) => (
-              <article
-                key={f.id}
-                id={`finding-${f.id}`}
-                className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-              >
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-900 text-xs font-semibold text-white">
-                    {idx + 1}
-                  </span>
-                  <span
-                    className={cn(
-                      'rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize',
-                      severityTone(f.severity),
-                    )}
-                  >
-                    {f.severity}
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-600">
-                    {f.category.replace(/_/g, ' ')}
-                  </span>
-                  {f.impactPoints != null ? (
-                    <span className="text-xs font-medium text-teal-800">
-                      +{(f.impactPoints / 10).toFixed(1)}
+            <div className="max-h-[min(70vh,36rem)] space-y-3 overflow-y-auto overscroll-contain pr-1">
+              {findings.map((f, idx) => (
+                <article
+                  key={f.id}
+                  id={`finding-${f.id}`}
+                  className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                      {idx + 1}
                     </span>
-                  ) : null}
-                </div>
-                <h4 className="font-semibold text-slate-950">{f.title}</h4>
-                <p className="mt-1 text-sm text-slate-600">{f.description}</p>
-                {f.remediation ? (
-                  <div className="mt-3 rounded-xl bg-slate-950 px-3 py-2 text-sm text-slate-100">
-                    <span className="font-semibold text-teal-300">Fix · </span>
-                    {f.remediation}
+                    <span
+                      className={cn(
+                        'rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize',
+                        severityTone(f.severity),
+                      )}
+                    >
+                      {f.severity}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-600">
+                      {f.category.replace(/_/g, ' ')}
+                    </span>
+                    {f.impactPoints != null ? (
+                      <span className="text-xs font-medium text-teal-800">
+                        +{(f.impactPoints / 10).toFixed(1)}
+                      </span>
+                    ) : null}
                   </div>
-                ) : null}
-              </article>
-            ))
+                  <h4 className="font-semibold text-slate-950">{f.title}</h4>
+                  <p className="mt-1 text-sm text-slate-600">{f.description}</p>
+                  {f.remediation ? (
+                    <div className="mt-3 rounded-xl bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <span className="font-semibold text-teal-300">Fix · </span>
+                      {f.remediation}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
           )}
         </div>
       </div>
