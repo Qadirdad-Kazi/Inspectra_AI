@@ -1,0 +1,41 @@
+{
+  "name": "@inspectra/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --max-warnings=0",
+    "test": "vitest run --passWithNoTests",
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "push": "prisma db push",
+    "studio": "prisma studio",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.8.2",
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "@inspectra/tsconfig": "workspace:*",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^22.15.21",
+    "eslint": "^9.27.0",
+    "prisma": "^6.8.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

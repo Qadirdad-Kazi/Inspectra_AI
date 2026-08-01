@@ -1,0 +1,2 @@
+-- Inspectra AI initial schema will be produced via `pnpm db:migrate`.
+-- This file is a placeholder so the migrations directory exists.

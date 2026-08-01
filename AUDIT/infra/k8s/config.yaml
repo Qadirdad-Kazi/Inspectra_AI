@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inspectra-config
+  namespace: inspectra
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  API_PORT: "4000"
+  TRUST_PROXY: "1"
+  ENABLE_SWAGGER: "false"
+  RATE_LIMIT_MAX: "120"
+  WEB_URL: "https://app.example.com"
+  NEXT_PUBLIC_API_URL: "https://api.example.com"
+---
+# Populate via sealed-secrets / external-secrets — do not commit real values.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inspectra-secrets
+  namespace: inspectra
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://inspectra:CHANGE_ME@postgres:5432/inspectra?schema=public"
+  REDIS_URL: "redis://redis:6379"
+  JWT_SECRET: "CHANGE_ME_LONG_RANDOM"
+  AUTH_SECRET: "CHANGE_ME_LONG_RANDOM"
+  SENTRY_DSN: ""

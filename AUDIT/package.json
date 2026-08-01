@@ -1,0 +1,31 @@
+{
+  "name": "inspectra",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Inspectra AI — multi-target audit platform monorepo",
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @inspectra/db generate",
+    "db:migrate": "pnpm --filter @inspectra/db migrate:dev",
+    "db:push": "pnpm --filter @inspectra/db push",
+    "db:studio": "pnpm --filter @inspectra/db studio",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@inspectra/eslint-config": "workspace:*",
+    "@inspectra/tsconfig": "workspace:*",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  }
+}

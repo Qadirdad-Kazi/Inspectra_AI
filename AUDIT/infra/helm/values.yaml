@@ -1,0 +1,15 @@
+# Default values for documentation / future templates
+replicaCount:
+  api: 2
+  web: 2
+image:
+  registry: ghcr.io/ORG
+  tag: latest
+  pullPolicy: IfNotPresent
+ingress:
+  hostApp: app.example.com
+  hostApi: api.example.com
+resources:
+  api:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { cpu: "1", memory: 1Gi }

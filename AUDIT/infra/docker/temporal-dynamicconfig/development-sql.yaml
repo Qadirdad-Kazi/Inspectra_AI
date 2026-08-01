@@ -1,0 +1,5 @@
+# Placeholder Temporal dynamic config for local auto-setup.
+# Extend as needed for production namespaces / limits.
+limit.maxIDLength:
+  - value: 255
+    constraints: {}

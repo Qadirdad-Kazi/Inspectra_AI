@@ -1,0 +1,9 @@
+.DS_Store
+**/.DS_Store
+AUDIT/.env
+AUDIT/.env.local
+AUDIT/.pnpm-store
+AUDIT/node_modules
+AUDIT/**/node_modules
+AUDIT/**/.next
+AUDIT/**/dist
