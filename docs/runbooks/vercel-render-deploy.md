@@ -79,7 +79,7 @@ DATABASE_URL="<External Database URL>?schema=public" pnpm --filter @inspectra/db
 | Branch | `main` |
 | Root Directory | *(empty)* |
 | Runtime | Node |
-| Build Command | `npm install -g pnpm@9.15.4 && pnpm install && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build` |
+| Build Command | `npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build` |
 | Start Command | `API_PORT=$PORT node apps/api/dist/main.js` |
 | Health check | `/health/ready` |
 
@@ -121,11 +121,12 @@ Build:    cd ../.. && pnpm --filter @inspectra/web... build
 Env:      NEXT_PUBLIC_API_URL
 
 # Render API
-Build:    npm install -g pnpm@9.15.4 && pnpm install && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build
+Build:    npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build
 Start:    API_PORT=$PORT node apps/api/dist/main.js
 Env:      DATABASE_URL, JWT_SECRET, AUTH_SECRET, WEB_URL, NODE_ENV, TRUST_PROXY
 ```
 
+> Render service `NODE_ENV=production` also applies during **build**, so install must force `NODE_ENV=development` or Prisma/TypeScript will be missing.
 ---
 
 ## Troubleshooting
@@ -156,6 +157,16 @@ Set **Root Directory** to `apps/web` (not repo root). Use install/build commands
 ### Vercel `ERR_INVALID_THIS` / `ERR_PNPM_META_FETCH_FAIL`
 
 Use install command with global pnpm (not Corepack). Pin Node to **20**.
+
+### Render `prisma: not found` / `tsc: command not found`
+
+Service env `NODE_ENV=production` applies at build time, so pnpm omits `devDependencies`. Use:
+
+```text
+NODE_ENV=development pnpm install --frozen-lockfile
+```
+
+in the **Build Command** (runtime can still be `NODE_ENV=production`).
 
 ### CORS
 

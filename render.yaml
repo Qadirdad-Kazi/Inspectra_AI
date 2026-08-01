@@ -14,7 +14,7 @@ services:
     runtime: node
     plan: free
     branch: main
-    buildCommand: npm install -g pnpm@9.15.4 && pnpm install && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build
+    buildCommand: npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build
     startCommand: API_PORT=$PORT node apps/api/dist/main.js
     healthCheckPath: /health/ready
     envVars:
