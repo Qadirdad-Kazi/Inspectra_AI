@@ -7,9 +7,6 @@ const monorepoRootDeploy = process.env.VERCEL_MONOREPO_ROOT === '1';
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@inspectra/ui', '@inspectra/sdk'],
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // Include workspace packages when tracing serverless functions
   outputFileTracingRoot: path.join(appDir, '../..'),
   // Emit `.next` at monorepo root when Vercel Root Directory is `.`
