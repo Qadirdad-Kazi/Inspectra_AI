@@ -36,7 +36,6 @@ async function bootstrap() {
     .split(',')
     .map((s) => s.trim().replace(/\/$/, ''))
     .filter(Boolean);
-  const webOrigin = corsOrigins[0] ?? 'http://localhost:3000';
 
   // Trust reverse proxy (nginx / ingress) for correct client IPs + rate limits
   const expressApp = app.getHttpAdapter().getInstance();
