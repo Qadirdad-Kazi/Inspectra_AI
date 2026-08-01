@@ -15,9 +15,12 @@ export const screenshotsModule: StoreModule = {
       score = deduct(score, findings, {
         fingerprint: fingerprint(['shot', 'none', listing.storeId]),
         title: 'No screenshots to review',
-        description: 'Listing exposes zero screenshot URLs.',
+        description:
+          'Store listing scrape returned zero screenshot URLs. Re-run with a Play / App Store / Microsoft Store product URL (not a marketing website). If the store page clearly has screenshots, the scraper may have been blocked — try again after deploy.',
         severity: 'critical',
         category: 'screenshots',
+        remediation:
+          'Paste the official store listing URL and re-run the audit. Website audits do not extract store creative frames.',
       }, 40);
       return {
         moduleId: 'screenshots',

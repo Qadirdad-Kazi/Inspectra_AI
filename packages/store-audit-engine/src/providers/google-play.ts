@@ -20,21 +20,85 @@ function extractPlayId(input: string): { storeId: string; url: string } {
   throw new Error('Invalid Google Play identifier (use package id or Play Store URL)');
 }
 
-function parseAfData($: cheerio.CheerioAPI): Record<string, unknown> | null {
-  const scripts = $('script').toArray();
-  for (const el of scripts) {
-    const text = $(el).html() ?? '';
-    const m = text.match(/AF_initDataCallback\((\{[\s\S]*?\})\);/);
-    if (!m?.[1]) continue;
-    try {
-      // Best-effort: many payloads are JS object literals; skip if not JSON.
-      const keyMatch = m[1].match(/key:\s*'([^']+)'/);
-      if (keyMatch) return { key: keyMatch[1], snippet: m[1].slice(0, 500) };
-    } catch {
-      /* continue */
+/** Normalize play-lh URL; strip srcset density suffixes like " 2x". */
+function cleanPlayImageUrl(raw: string): string | null {
+  const trimmed = raw.trim().split(/\s+/)[0]?.replace(/\\u003d/g, '=').replace(/\\u0026/g, '&');
+  if (!trimmed) return null;
+  if (!/play-lh\.googleusercontent\.com|googleusercontent\.com|ggpht\.com/i.test(trimmed)) {
+    return null;
+  }
+  try {
+    const u = new URL(trimmed.startsWith('http') ? trimmed : `https:${trimmed}`);
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+function imageBaseId(url: string): string {
+  // play-lh URLs: https://play-lh.googleusercontent.com/<id>[=size]
+  const path = url.split('?')[0] ?? url;
+  return path.split('=')[0] ?? path;
+}
+
+function parseSize(url: string): { w: number; h: number } | null {
+  const m = url.match(/=w(\d+)(?:-h(\d+))?/i);
+  if (!m) return null;
+  return { w: Number(m[1]), h: Number(m[2] ?? m[1]) };
+}
+
+/**
+ * Extract screenshot URLs from Play Store HTML.
+ * Cheerio img[src] alone misses srcset / JSON-embedded play-lh URLs.
+ */
+export function extractPlayScreenshotUrls(html: string, iconUrl?: string): string[] {
+  const candidates: string[] = [];
+
+  for (const m of html.matchAll(
+    /https:\/\/play-lh\.googleusercontent\.com\/[A-Za-z0-9_\-.=]+/g,
+  )) {
+    const cleaned = cleanPlayImageUrl(m[0]);
+    if (cleaned) candidates.push(cleaned);
+  }
+
+  // srcset / escaped JSON forms
+  for (const m of html.matchAll(
+    /(?:srcset|src|data-src)=["']([^"']*play-lh\.googleusercontent\.com[^"']*)["']/gi,
+  )) {
+    for (const part of (m[1] ?? '').split(',')) {
+      const cleaned = cleanPlayImageUrl(part);
+      if (cleaned) candidates.push(cleaned);
     }
   }
-  return null;
+
+  const iconBase = iconUrl ? imageBaseId(cleanPlayImageUrl(iconUrl) ?? iconUrl) : null;
+  const bestByBase = new Map<string, { url: string; area: number }>();
+
+  for (const url of candidates) {
+    const base = imageBaseId(url);
+    if (iconBase && base === iconBase) continue;
+
+    const size = parseSize(url);
+    // Prefer phone/tablet frames; skip tiny chips and square icons
+    if (size) {
+      if (size.w < 200 && size.h < 200) continue;
+      if (size.w === size.h && size.w <= 512) continue;
+      if (size.h > 0 && size.w / size.h > 8) continue; // banner strips
+    }
+
+    const area = size ? size.w * size.h : 0;
+    const hiRes = `${base}=w1080`;
+    const prev = bestByBase.get(base);
+    if (!prev || area >= prev.area) {
+      bestByBase.set(base, { url: hiRes, area });
+    }
+  }
+
+  // Prefer largest frames first (screenshots tend to be bigger than UI chrome)
+  return [...bestByBase.values()]
+    .sort((a, b) => b.area - a.area)
+    .map((x) => x.url)
+    .slice(0, 12);
 }
 
 export const googlePlayProvider: StoreProvider = {
@@ -72,14 +136,7 @@ export const googlePlayProvider: StoreProvider = {
       $('img[itemprop="image"]').attr('src') ||
       $('meta[property="og:image"]').attr('content');
 
-    const screenshotUrls = $('img')
-      .toArray()
-      .map((el) => $(el).attr('src') || $(el).attr('data-src') || '')
-      .filter((src) => /googleusercontent\.com|ggpht\.com/i.test(src) && /screenshot|w\d+/i.test(src))
-      .slice(0, 12);
-
-    // Fallback: og images won't cover screenshots; keep unique
-    const uniqueScreens = [...new Set(screenshotUrls)];
+    const screenshotUrls = extractPlayScreenshotUrls(html, iconUrl);
 
     const category =
       $('a[href*="/store/apps/category/"]').first().text().trim() || undefined;
@@ -106,9 +163,14 @@ export const googlePlayProvider: StoreProvider = {
       installsText,
       free: !/\$\d/.test($('meta[property="og:title"]').attr('content') ?? ''),
       iconUrl,
-      screenshotUrls: uniqueScreens,
+      screenshotUrls,
       contentRating,
-      raw: { af: parseAfData($) ?? undefined },
+      raw: {
+        screenshotExtraction: {
+          count: screenshotUrls.length,
+          htmlBytes: html.length,
+        },
+      },
     } satisfies StoreListing;
   },
 

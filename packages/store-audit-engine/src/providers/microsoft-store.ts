@@ -79,7 +79,7 @@ export const microsoftStoreProvider: StoreProvider = {
         free: true,
       } satisfies StoreListing;
     } catch {
-      // HTML fallback
+      // HTML fallback — still try to pull screenshot-like images from the page
       const url = storeId.startsWith('http')
         ? storeId
         : `https://apps.microsoft.com/detail/${storeId}`;
@@ -93,6 +93,16 @@ export const microsoftStoreProvider: StoreProvider = {
         $('meta[name="description"]').attr('content') ||
         $('meta[property="og:description"]').attr('content') ||
         '';
+      const iconUrl = $('meta[property="og:image"]').attr('content');
+      const screenshotUrls = [
+        ...new Set(
+          $('img')
+            .toArray()
+            .map((el) => $(el).attr('src') || $(el).attr('data-src') || '')
+            .filter((src) => /^https?:\/\//i.test(src) && !/logo|icon|svg|sprite/i.test(src))
+            .slice(0, 12),
+        ),
+      ];
       return {
         platform: 'microsoft_store',
         storeId,
@@ -101,8 +111,8 @@ export const microsoftStoreProvider: StoreProvider = {
         developer: 'Unknown publisher',
         description,
         shortDescription: description.slice(0, 80),
-        iconUrl: $('meta[property="og:image"]').attr('content'),
-        screenshotUrls: [],
+        iconUrl,
+        screenshotUrls,
         free: true,
       } satisfies StoreListing;
     }
