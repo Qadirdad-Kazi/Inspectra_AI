@@ -58,7 +58,7 @@ export class BillingController {
     @Param('organizationId') organizationId: string,
     @CurrentUser() user: AuthPrincipal,
   ): Promise<EntitlementsResponseDto> {
-    return this.billingService.getEntitlements(organizationId, user.id);
+    return this.billingService.getEntitlements(organizationId, user.userId);
   }
 
   @ApiBearerAuth()
