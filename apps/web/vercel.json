@@ -1,5 +1,11 @@
 {
   "framework": "nextjs",
   "installCommand": "cd ../.. && npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @inspectra/web... build"
+  "buildCommand": "cd ../.. && pnpm --filter @inspectra/web... build",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "dependabot/**": false
+    }
+  }
 }
