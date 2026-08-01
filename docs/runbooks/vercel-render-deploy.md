@@ -29,13 +29,16 @@ Confirm GitHub `main` includes `packages/web-audit-engine/package.json` (not onl
 | Field | Value |
 |--------|--------|
 | Framework Preset | Next.js |
-| Root Directory | *(empty)* |
-| Install Command | `npm install -g pnpm@9.15.4 && pnpm install` |
-| Build Command | `pnpm --filter @inspectra/web... build` |
+| Root Directory | **`apps/web`** (required — `next` lives here, not repo root) |
+| Include files outside Root Directory | **Enabled** (needed for `packages/*` workspace deps) |
+| Install Command | `cd ../.. && npm install -g pnpm@9.15.4 && pnpm install` |
+| Build Command | `cd ../.. && pnpm --filter @inspectra/web... build` |
 | Output Directory | *(default)* |
 | Node.js Version | **20.x** |
 
 > Prefer `npm install -g pnpm@9.15.4` over `corepack enable` on Vercel — avoids pnpm `ERR_INVALID_THIS` / registry fetch failures with Corepack.
+>
+> If Root Directory is left empty, Vercel fails with: *No Next.js version detected*.
 
 ### Environment variables
 
@@ -112,9 +115,9 @@ curl -fsS https://inspectra-api.onrender.com/health/ready
 ## Quick reference
 
 ```text
-# Vercel
-Install:  npm install -g pnpm@9.15.4 && pnpm install
-Build:    pnpm --filter @inspectra/web... build
+# Vercel (Root Directory = apps/web)
+Install:  cd ../.. && npm install -g pnpm@9.15.4 && pnpm install
+Build:    cd ../.. && pnpm --filter @inspectra/web... build
 Env:      NEXT_PUBLIC_API_URL
 
 # Render API
@@ -138,15 +141,13 @@ git push -u origin main
 
 Then **Manual Deploy** on Render / redeploy on Vercel so they build the new commit (not `41bcd25`).
 
+### Vercel `No Next.js version detected`
+
+Set **Root Directory** to `apps/web` (not repo root). Use install/build commands that `cd ../..` into the monorepo root first.
+
 ### Vercel `ERR_INVALID_THIS` / `ERR_PNPM_META_FETCH_FAIL`
 
-Use install command:
-
-```text
-npm install -g pnpm@9.15.4 && pnpm install
-```
-
-Not `corepack enable && pnpm install`. Pin Node to **20**.
+Use install command with global pnpm (not Corepack). Pin Node to **20**.
 
 ### CORS
 
