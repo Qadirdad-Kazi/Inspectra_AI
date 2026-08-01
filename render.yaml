@@ -1,0 +1,38 @@
+# Render Blueprint — Inspectra API + Postgres
+# https://render.com/docs/blueprint-spec
+#
+# After first deploy, run migrations once from your machine:
+#   DATABASE_URL="<External DB URL>?schema=public" pnpm --filter @inspectra/db migrate:deploy
+
+databases:
+  - name: inspectra-db
+    plan: free
+
+services:
+  - type: web
+    name: inspectra-api
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install -g pnpm@9.15.4 && pnpm install && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build
+    startCommand: API_PORT=$PORT node apps/api/dist/main.js
+    healthCheckPath: /health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: AI_DEFAULT_PROVIDER
+        value: stub
+      - key: ENABLE_SWAGGER
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inspectra-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: WEB_URL
+        sync: false

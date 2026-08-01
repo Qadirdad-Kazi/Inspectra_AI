@@ -1,0 +1,5 @@
+{
+  "installCommand": "npm install -g pnpm@9.15.4 && pnpm install",
+  "buildCommand": "pnpm --filter @inspectra/web... build",
+  "framework": "nextjs"
+}
