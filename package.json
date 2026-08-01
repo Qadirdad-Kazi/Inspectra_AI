@@ -2,7 +2,7 @@
   "name": "inspectra",
   "private": true,
   "version": "0.0.0",
-  "description": "Inspectra AI — multi-target audit platform monorepo",
+  "description": "Inspectra AI \u2014 multi-target audit platform monorepo",
   "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=20"
@@ -19,7 +19,8 @@
     "db:migrate": "pnpm --filter @inspectra/db migrate:dev",
     "db:push": "pnpm --filter @inspectra/db push",
     "db:studio": "pnpm --filter @inspectra/db studio",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "build:api:render": "pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build"
   },
   "devDependencies": {
     "@inspectra/eslint-config": "workspace:*",

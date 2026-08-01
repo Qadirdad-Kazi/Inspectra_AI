@@ -21,10 +21,12 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@inspectra/tsconfig": "workspace:*",
     "@types/node": "^22.15.21",
     "eslint": "^9.27.0",
-    "typescript": "^5.8.3",
     "vitest": "^3.1.4"
+  },
+  "dependencies": {
+    "@inspectra/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
   }
 }

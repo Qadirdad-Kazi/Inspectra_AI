@@ -84,6 +84,9 @@ importers:
       '@inspectra/store-audit-engine':
         specifier: workspace:^
         version: link:../../packages/store-audit-engine
+      '@inspectra/tsconfig':
+        specifier: workspace:*
+        version: link:../../packages/tsconfig
       '@inspectra/web-audit-engine':
         specifier: workspace:^
         version: link:../../packages/web-audit-engine
@@ -159,10 +162,10 @@ importers:
       stripe:
         specifier: ^22.4.0
         version: 22.4.0(@types/node@22.20.1)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
     devDependencies:
-      '@inspectra/tsconfig':
-        specifier: workspace:*
-        version: link:../../packages/tsconfig
       '@nestjs/cli':
         specifier: ^11.0.7
         version: 11.0.24(@types/node@22.20.1)(lightningcss@1.32.0)(prettier@3.9.6)
@@ -193,9 +196,6 @@ importers:
       eslint:
         specifier: ^9.27.0
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
@@ -547,63 +547,66 @@ importers:
       '@inspectra/redaction':
         specifier: workspace:*
         version: link:../redaction
-    devDependencies:
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@types/node':
-        specifier: ^22.15.21
-        version: 22.20.1
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.21
+        version: 22.20.1
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
 
   packages/audit-contracts:
     dependencies:
+      '@inspectra/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
       zod:
         specifier: ^3.25.28
         version: 3.25.76
     devDependencies:
-      '@inspectra/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
       eslint:
         specifier: ^9.27.0
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
 
   packages/config:
     dependencies:
+      '@inspectra/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
       zod:
         specifier: ^3.25.28
         version: 3.25.76
     devDependencies:
-      '@inspectra/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
       '@types/node':
         specifier: ^22.15.21
         version: 22.20.1
       eslint:
         specifier: ^9.27.0
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
 
   packages/db:
     dependencies:
+      '@inspectra/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@prisma/client':
         specifier: ^6.8.2
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
@@ -613,10 +616,10 @@ importers:
       prisma:
         specifier: ^6.8.2
         version: 6.19.3(typescript@5.9.3)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
     devDependencies:
-      '@inspectra/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
       '@types/bcryptjs':
         specifier: ^3.0.0
         version: 3.0.0
@@ -626,9 +629,6 @@ importers:
       eslint:
         specifier: ^9.27.0
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
@@ -649,19 +649,20 @@ importers:
         version: 8.65.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
 
   packages/logger:
-    devDependencies:
+    dependencies:
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+    devDependencies:
       '@types/node':
         specifier: ^22.15.21
         version: 22.20.1
       eslint:
         specifier: ^9.27.0
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
@@ -686,16 +687,17 @@ importers:
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
 
   packages/redaction:
-    devDependencies:
+    dependencies:
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      eslint:
-        specifier: ^9.27.0
-        version: 9.39.5(jiti@2.7.0)
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+    devDependencies:
+      eslint:
+        specifier: ^9.27.0
+        version: 9.39.5(jiti@2.7.0)
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
@@ -705,16 +707,16 @@ importers:
       '@inspectra/audit-contracts':
         specifier: workspace:*
         version: link:../audit-contracts
-    devDependencies:
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@types/node':
-        specifier: ^22.15.21
-        version: 22.20.1
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.21
+        version: 22.20.1
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
@@ -765,19 +767,19 @@ importers:
       '@inspectra/audit-contracts':
         specifier: workspace:*
         version: link:../audit-contracts
-      cheerio:
-        specifier: ^1.0.0
-        version: 1.2.0
-    devDependencies:
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
-      '@types/node':
-        specifier: ^22.15.21
-        version: 22.20.1
+      cheerio:
+        specifier: ^1.0.0
+        version: 1.2.0
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.21
+        version: 22.20.1
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
@@ -814,22 +816,22 @@ importers:
       '@inspectra/audit-contracts':
         specifier: workspace:*
         version: link:../audit-contracts
-      cheerio:
-        specifier: ^1.0.0
-        version: 1.2.0
-    devDependencies:
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      cheerio:
+        specifier: ^1.0.0
+        version: 1.2.0
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+    devDependencies:
       '@types/node':
         specifier: ^22.15.21
         version: 22.20.1
       eslint:
         specifier: ^9.27.0
         version: 9.39.5(jiti@2.7.0)
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
       vitest:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)

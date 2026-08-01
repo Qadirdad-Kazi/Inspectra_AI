@@ -22,13 +22,13 @@
   },
   "dependencies": {
     "@inspectra/audit-contracts": "workspace:*",
-    "cheerio": "^1.0.0"
+    "cheerio": "^1.0.0",
+    "@inspectra/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
-    "@inspectra/tsconfig": "workspace:*",
     "@types/node": "^22.15.21",
     "eslint": "^9.27.0",
-    "typescript": "^5.8.3",
     "vitest": "^3.1.4"
   }
 }
