@@ -192,7 +192,7 @@ export class AuditsService {
       });
     }
 
-    await this.billing.consumeAuditCredit(organizationId);
+    await this.billing.consumeAuditCredit(organizationId, userId);
 
     if (asset.type === AssetType.web) {
       const config = {

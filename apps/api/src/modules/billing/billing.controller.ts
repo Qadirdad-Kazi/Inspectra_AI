@@ -15,8 +15,9 @@ import {
   UsageRecordResponseDto,
   UsageSummaryQueryDto,
 } from './dto/billing.dto';
-import { Public, Roles } from '../../common/decorators';
+import { Public, Roles, CurrentUser } from '../../common/decorators';
 import { ApiPaginatedOkResponse } from '../../common/dto/pagination.dto';
+import type { AuthPrincipal } from '../../common/types/auth.types';
 
 @ApiTags('Billing')
 @Controller()
@@ -55,8 +56,9 @@ export class BillingController {
   @Roles('viewer')
   getEntitlements(
     @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthPrincipal,
   ): Promise<EntitlementsResponseDto> {
-    return this.billingService.getEntitlements(organizationId);
+    return this.billingService.getEntitlements(organizationId, user.id);
   }
 
   @ApiBearerAuth()

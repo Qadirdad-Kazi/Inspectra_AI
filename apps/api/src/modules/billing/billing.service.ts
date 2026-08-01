@@ -16,9 +16,11 @@ import type {
   UsageSummaryQueryDto,
 } from './dto/billing.dto';
 import { AUDIT_PACKAGES, getAuditPackage } from './packages';
+import { isUnlimitedAuditEmail } from '../../common/utils/unlimited-access';
 
 type SettingsMeta = {
   auditCredits?: number;
+  unlimitedAudits?: boolean;
 };
 
 @Injectable()
@@ -99,21 +101,29 @@ export class BillingService {
     return { auditCredits: next };
   }
 
-  /** Consume one credit for a new audit. First audit is free; then packs are required. */
-  async consumeAuditCredit(organizationId: string) {
+  async userHasUnlimitedAudits(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    return isUnlimitedAuditEmail(user?.email);
+  }
+
+  /** Consume one credit for a new audit. Unlimited allowlist users skip credits. */
+  async consumeAuditCredit(organizationId: string, userId?: string) {
+    if (userId && (await this.userHasUnlimitedAudits(userId))) {
+      return { auditCredits: null as number | null, unlimited: true as const, freeTrial: false as const };
+    }
+
     const settings = await this.prisma.organizationSettings.findUnique({
       where: { organizationId },
     });
     const meta = { ...((settings?.metadata ?? {}) as SettingsMeta) };
     const credits = Number(meta.auditCredits ?? 0);
     if (credits < 1) {
-      const prior = await this.prisma.audit.count({ where: { organizationId } });
-      if (prior === 0) {
-        return { auditCredits: 0, freeTrial: true as const };
-      }
       throw new BadRequestException({
         code: 'NO_AUDIT_CREDITS',
-        message: 'No audit credits left. Buy a one-time package on Billing.',
+        message: 'No audit credits left. Buy a one-time package on Packages.',
       });
     }
     meta.auditCredits = credits - 1;
@@ -125,7 +135,7 @@ export class BillingService {
       },
       update: { metadata: meta as Prisma.InputJsonValue },
     });
-    return { auditCredits: meta.auditCredits, freeTrial: false as const };
+    return { auditCredits: meta.auditCredits, unlimited: false as const, freeTrial: false as const };
   }
 
   async getSubscription(organizationId: string) {
@@ -153,7 +163,11 @@ export class BillingService {
     };
   }
 
-  async getEntitlements(organizationId: string) {
+  async getEntitlements(organizationId: string, userId?: string) {
+    const unlimitedAudits = userId
+      ? await this.userHasUnlimitedAudits(userId)
+      : false;
+
     const sub = await this.prisma.subscription.findFirst({
       where: {
         organizationId,
@@ -164,28 +178,30 @@ export class BillingService {
     const settings = await this.prisma.organizationSettings.findUnique({
       where: { organizationId },
     });
-    const auditCredits = Number(
-      ((settings?.metadata ?? {}) as SettingsMeta).auditCredits ?? 0,
-    );
+    const auditCredits = unlimitedAudits
+      ? Number.MAX_SAFE_INTEGER
+      : Number(((settings?.metadata ?? {}) as SettingsMeta).auditCredits ?? 0);
 
     if (!sub) {
       return {
-        plan: 'payg',
+        plan: unlimitedAudits ? 'unlimited' : 'payg',
         seatsIncluded: 3,
         auditMinutesIncluded: 60,
         aiTriageEnabled: Boolean(settings?.allowAiTriage ?? true),
-        maxConcurrentAudits: 2,
+        maxConcurrentAudits: unlimitedAudits ? 10 : 2,
         auditCredits,
+        unlimitedAudits,
       };
     }
 
     return {
-      plan: sub.stripePriceId,
+      plan: unlimitedAudits ? 'unlimited' : sub.stripePriceId,
       seatsIncluded: sub.seatQuantity,
       auditMinutesIncluded: 1000 * sub.seatQuantity,
       aiTriageEnabled: Boolean(settings?.allowAiTriage) || sub.seatQuantity >= 5,
-      maxConcurrentAudits: Math.max(1, sub.seatQuantity),
+      maxConcurrentAudits: unlimitedAudits ? 10 : Math.max(1, sub.seatQuantity),
       auditCredits,
+      unlimitedAudits,
     };
   }
 

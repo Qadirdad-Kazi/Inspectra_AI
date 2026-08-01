@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -15,6 +16,7 @@ type Entitlements = {
   aiTriageEnabled: boolean;
   maxConcurrentAudits: number;
   auditCredits: number;
+  unlimitedAudits: boolean;
 };
 
 export default function BillingPage() {
@@ -73,6 +75,8 @@ export default function BillingPage() {
     }
   }
 
+  const unlimited = Boolean(entitlements?.unlimitedAudits);
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -85,50 +89,78 @@ export default function BillingPage() {
       <Card>
         <CardHeader>
           <CardTitle>Your balance</CardTitle>
-          <CardDescription>Credits are deducted one per audit run.</CardDescription>
+          <CardDescription>
+            {unlimited
+              ? 'Unlimited account — audits are not deducted from a credit balance.'
+              : 'Credits are deducted one per audit run. You need credits to start audits.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-semibold tabular-nums">
-            {entitlements?.auditCredits ?? '…'}
-            <span className="ml-2 text-base font-normal text-muted">audits left</span>
-          </p>
+          {unlimited ? (
+            <p className="text-3xl font-semibold">Unlimited</p>
+          ) : (
+            <p className="text-3xl font-semibold tabular-nums">
+              {entitlements?.auditCredits ?? '…'}
+              <span className="ml-2 text-base font-normal text-muted">audits left</span>
+            </p>
+          )}
+          {!unlimited && entitlements && entitlements.auditCredits < 1 ? (
+            <p className="mt-3 text-sm text-amber-800">
+              No credits left.{' '}
+              <span className="font-medium">Buy a pack below</span> to run audits.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {AUDIT_PACKAGES.map((pack) => (
-          <Card
-            key={pack.id}
-            className={pack.highlighted ? 'border-teal-700/50 shadow-md' : undefined}
-          >
-            <CardHeader>
-              {pack.highlighted ? (
-                <p className="text-xs font-medium uppercase tracking-wide text-teal-800">
-                  Most popular
-                </p>
-              ) : null}
-              <CardTitle>{pack.name}</CardTitle>
-              <CardDescription>{pack.blurb}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="text-3xl font-semibold tabular-nums">
-                  {formatUsd(pack.priceUsd)}
+      {!unlimited ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          {AUDIT_PACKAGES.map((pack) => (
+            <Card
+              key={pack.id}
+              className={pack.highlighted ? 'border-teal-700/50 shadow-md' : undefined}
+            >
+              <CardHeader>
+                {pack.highlighted ? (
+                  <p className="text-xs font-medium uppercase tracking-wide text-teal-800">
+                    Most popular
+                  </p>
+                ) : null}
+                <CardTitle>{pack.name}</CardTitle>
+                <CardDescription>{pack.blurb}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="text-3xl font-semibold tabular-nums">
+                    {formatUsd(pack.priceUsd)}
+                  </div>
+                  <div className="mt-1 text-sm text-muted">
+                    {pack.audits} audits · never expires
+                  </div>
                 </div>
-                <div className="mt-1 text-sm text-muted">{pack.audits} audits · never expires</div>
-              </div>
-              <Button
-                className="w-full"
-                variant={pack.highlighted ? 'default' : 'outline'}
-                disabled={buying !== null}
-                onClick={() => void buyPack(pack.id)}
-              >
-                {buying === pack.id ? 'Processing…' : 'Buy once'}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <Button
+                  className="w-full"
+                  variant={pack.highlighted ? 'default' : 'outline'}
+                  disabled={buying !== null}
+                  onClick={() => void buyPack(pack.id)}
+                >
+                  {buying === pack.id ? 'Processing…' : 'Buy once'}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-6 text-sm text-muted">
+            Package purchases are not required for your account.{' '}
+            <Link href="/audits" className="font-medium text-teal-800 underline">
+              Start an audit
+            </Link>
+            .
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

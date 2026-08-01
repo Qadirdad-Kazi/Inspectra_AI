@@ -60,7 +60,11 @@ export function QuickAuditBar({
       onStarted?.(audit.id);
       router.push(`/audits/${audit.id}`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not start audit');
+      const message = err instanceof Error ? err.message : 'Could not start audit';
+      toast.error(message);
+      if (/credit|package|NO_AUDIT/i.test(message)) {
+        router.push('/billing');
+      }
     } finally {
       setLoading(false);
     }

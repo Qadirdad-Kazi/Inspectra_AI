@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { OAuthController } from './oauth.controller';
+import { OwnerSeedService } from './owner-seed.service';
 import { SessionService } from '../../common/services/session.service';
 import { resolveJwtSecret } from '../../common/utils/jwt-secret';
 
@@ -15,7 +16,7 @@ import { resolveJwtSecret } from '../../common/utils/jwt-secret';
     }),
   ],
   controllers: [AuthController, OAuthController],
-  providers: [AuthService, SessionService],
+  providers: [AuthService, SessionService, OwnerSeedService],
   exports: [AuthService, SessionService],
 })
 export class AuthModule {}

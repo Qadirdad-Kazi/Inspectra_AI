@@ -126,4 +126,7 @@ export class EntitlementsResponseDto {
 
   @ApiProperty({ description: 'One-time audit credits remaining (never expire)' })
   auditCredits!: number;
+
+  @ApiProperty({ description: 'When true, audits are not limited by credits' })
+  unlimitedAudits!: boolean;
 }
