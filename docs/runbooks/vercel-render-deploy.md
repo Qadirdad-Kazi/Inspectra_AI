@@ -31,7 +31,7 @@ Confirm GitHub `main` includes `packages/web-audit-engine/package.json` (not onl
 | Framework Preset | Next.js |
 | Root Directory | **`apps/web`** (required — `next` lives here, not repo root) |
 | Include files outside Root Directory | **Enabled** (needed for `packages/*` workspace deps) |
-| Install Command | `cd ../.. && npm install -g pnpm@9.15.4 && pnpm install` |
+| Install Command | `cd ../.. && npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile` |
 | Build Command | `cd ../.. && pnpm --filter @inspectra/web... build` |
 | Output Directory | *(default)* |
 | Node.js Version | **20.x** |
@@ -116,7 +116,7 @@ curl -fsS https://inspectra-api.onrender.com/health/ready
 
 ```text
 # Vercel (Root Directory = apps/web)
-Install:  cd ../.. && npm install -g pnpm@9.15.4 && pnpm install
+Install:  cd ../.. && npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile
 Build:    cd ../.. && pnpm --filter @inspectra/web... build
 Env:      NEXT_PUBLIC_API_URL
 
@@ -140,6 +140,14 @@ git push -u origin main
 ```
 
 Then **Manual Deploy** on Render / redeploy on Vercel so they build the new commit (not `41bcd25`).
+
+### Vercel `tsc: command not found`
+
+Vercel sets `NODE_ENV=production` during install, so pnpm skips `devDependencies` (including TypeScript). Force a full install:
+
+```text
+NODE_ENV=development pnpm install --frozen-lockfile
+```
 
 ### Vercel `No Next.js version detected`
 
