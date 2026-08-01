@@ -265,7 +265,6 @@ export function AuditReportView({
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start gap-4">
             {model.listing?.iconUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={model.listing.iconUrl}
                 alt=""
@@ -328,7 +327,6 @@ export function AuditReportView({
                       href={badge ? `#finding-${findings[i]!.id}` : undefined}
                       className="relative shrink-0"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={src}
                         alt={`Screenshot ${i + 1}`}
