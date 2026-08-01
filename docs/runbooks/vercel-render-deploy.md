@@ -28,12 +28,12 @@ Confirm GitHub `main` includes `packages/web-audit-engine/package.json` (not onl
 
 | Field | Value |
 |--------|--------|
-| Framework Preset | **Next.js** (not Other / not static) |
-| Root Directory | **`apps/web`** |
-| Include files outside Root Directory | **Enabled** |
-| Install Command | `cd ../.. && npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile` |
-| Build Command | `cd ../.. && pnpm --filter @inspectra/web... build` |
-| Output Directory | **Leave empty** — do not set `public` (Next.js uses `.next`) |
+| Framework Preset | **Next.js** |
+| Root Directory | Prefer **`apps/web`**. If left empty (repo root), root `vercel.json` + `scripts/vercel-web-build.sh` still work |
+| Include files outside Root Directory | **Enabled** (when Root Directory is `apps/web`) |
+| Install Command | Root: `npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile` · From `apps/web`: prefix with `cd ../.. &&` |
+| Build Command | Root: `bash scripts/vercel-web-build.sh` · From `apps/web`: `cd ../.. && pnpm --filter @inspectra/web... build` |
+| Output Directory | **Leave empty** (never set `public`) |
 | Node.js Version | **20.x** |
 
 > Prefer `npm install -g pnpm@9.15.4` over `corepack enable` on Vercel — avoids pnpm `ERR_INVALID_THIS` / registry fetch failures with Corepack.
