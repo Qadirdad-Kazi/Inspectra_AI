@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
-# Build Next.js web app from monorepo root for Vercel (Root Directory = .).
+# Build Next.js for Vercel when Root Directory is the monorepo root (.).
+# Writes .next to the repo root via VERCEL_MONOREPO_ROOT + next.config distDir.
 set -euo pipefail
+
+export VERCEL_MONOREPO_ROOT=1
 
 pnpm --filter @inspectra/web... build
 
-rm -rf .next
-cp -R apps/web/.next .next
-
+# Static assets expected at deploy root
 mkdir -p public
 if [ -d apps/web/public ]; then
   cp -R apps/web/public/. public/
 fi
-
-# Help Vercel resolve Next config / app paths at repo root
-cp -f apps/web/next.config.ts ./next.config.ts
