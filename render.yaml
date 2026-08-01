@@ -1,8 +1,8 @@
 # Render Blueprint — Inspectra API + Postgres
 # https://render.com/docs/blueprint-spec
 #
-# After first deploy, run migrations once from your machine:
-#   DATABASE_URL="<External DB URL>?schema=public" pnpm --filter @inspectra/db migrate:deploy
+# Migrations run during build (build:api:render → prisma migrate deploy).
+# If the DB was created before that, trigger a Manual Deploy once so migrate runs.
 
 databases:
   - name: inspectra-db
@@ -14,7 +14,7 @@ services:
     runtime: node
     plan: free
     branch: main
-    buildCommand: npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile && pnpm run build:api:render
+    buildCommand: npm install -g pnpm@9.15.4 && NODE_ENV=development pnpm install --frozen-lockfile && pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/db migrate:deploy && pnpm --filter @inspectra/api... build
     startCommand: API_PORT=$PORT node apps/api/dist/main.js
     healthCheckPath: /health/ready
     envVars:

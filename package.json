@@ -20,7 +20,7 @@
     "db:push": "pnpm --filter @inspectra/db push",
     "db:studio": "pnpm --filter @inspectra/db studio",
     "clean": "turbo run clean && rm -rf node_modules",
-    "build:api:render": "pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/api... build",
+    "build:api:render": "pnpm --filter @inspectra/db generate && pnpm --filter @inspectra/db migrate:deploy && pnpm --filter @inspectra/api... build",
     "build:web:vercel": "bash scripts/vercel-web-build.sh"
   },
   "dependencies": {
