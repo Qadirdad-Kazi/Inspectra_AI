@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Hardened multi-stage builds — non-root, production NODE_ENV, minimal attack surface.
 
-FROM node:20-alpine AS base
+FROM node:25-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate \
   && apk add --no-cache libc6-compat
 WORKDIR /app
@@ -19,7 +19,7 @@ ENV NODE_ENV=production
 RUN pnpm --filter @inspectra/db generate \
   && pnpm --filter @inspectra/api... build
 
-FROM node:20-alpine AS api
+FROM node:25-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init \
@@ -40,7 +40,7 @@ ARG NEXT_PUBLIC_API_URL=http://localhost:4000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm --filter @inspectra/web... build
 
-FROM node:20-alpine AS web
+FROM node:25-alpine AS web
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init \
