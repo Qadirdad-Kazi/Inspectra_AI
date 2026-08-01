@@ -76,14 +76,19 @@ export const asoModule: StoreModule = {
       }, 5);
     }
 
-    if (listing.screenshotUrls.length < 4) {
+    if (listing.screenshotUrls.length > 0 && listing.screenshotUrls.length < 4) {
       score = deduct(score, findings, {
         fingerprint: fingerprint(['aso', 'screen-count', listing.storeId]),
         title: 'Few screenshots for conversion',
         description: `Found ${listing.screenshotUrls.length} screenshot(s); stores typically reward 5–8 strong frames.`,
         severity: 'medium',
         category: 'aso',
+        remediation:
+          'Add more store screenshots that show core value props in the first 3 frames.',
       }, 8);
+    } else if (listing.screenshotUrls.length === 0) {
+      // Owned by screenshots module — keep a lighter score hit without a duplicate finding
+      score = clampScore(score - 8);
     }
 
     const subtitleGap =

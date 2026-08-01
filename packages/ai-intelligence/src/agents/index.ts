@@ -279,9 +279,7 @@ export const brandingAgent: SpecialistAgent = {
     const prompt = getActivePrompt('branding');
     const findings = findingsForCategories(ctx.input.findings, [
       'icon',
-      'screenshots',
       'metadata',
-      'aso',
       'branding',
     ]);
     const recs = fromFindings({

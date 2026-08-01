@@ -69,13 +69,8 @@ export const metadataModule: StoreModule = {
     }
 
     if (listing.screenshotUrls.length === 0) {
-      score = deduct(score, findings, {
-        fingerprint: fingerprint(['meta', 'screens', listing.storeId]),
-        title: 'No screenshots found',
-        description: 'Screenshots are critical for conversion on store shelves.',
-        severity: 'high',
-        category: 'metadata',
-      }, 15);
+      // Finding owned by screenshots module — avoid duplicate Priority Actions noise
+      score = clampScore(score - 15);
     }
 
     if (!listing.privacyPolicyUrl && listing.platform !== 'microsoft_store') {

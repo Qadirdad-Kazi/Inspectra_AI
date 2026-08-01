@@ -85,6 +85,50 @@ function impactFromPriority(p: string): number {
   return 2;
 }
 
+const SEVERITY_RANK: Record<string, number> = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+  info: 0,
+};
+
+/** Collapse near-duplicate screenshot/ASO noise into one Priority Action. */
+function dedupeFindings(items: ReportFinding[]): ReportFinding[] {
+  const out: ReportFinding[] = [];
+  let screenshotSlot: ReportFinding | null = null;
+
+  for (const item of items) {
+    const key = item.title.toLowerCase();
+    const isScreenshotNoise =
+      /^(no |few )?screenshots?\b/i.test(key) ||
+      /\bscreenshots? (to review|found|for conversion|detected|missing)\b/i.test(key);
+
+    if (isScreenshotNoise) {
+      if (
+        !screenshotSlot ||
+        (SEVERITY_RANK[item.severity.toLowerCase()] ?? 0) >
+          (SEVERITY_RANK[screenshotSlot.severity.toLowerCase()] ?? 0)
+      ) {
+        screenshotSlot = {
+          ...item,
+          title: 'No store screenshots detected',
+          remediation:
+            item.remediation && !/^Investigate and remediate:/i.test(item.remediation)
+              ? item.remediation
+              : 'Re-run with an official Play / App Store / Microsoft Store URL after the latest API deploy.',
+        };
+      }
+      continue;
+    }
+
+    out.push(item);
+  }
+
+  if (screenshotSlot) out.unshift(screenshotSlot);
+  return out;
+}
+
 export function mapAuditToReportModel(
   audit: AuditLike,
   findingsFallback: FindingLike[] = [],
@@ -177,7 +221,7 @@ export function mapAuditToReportModel(
       null,
     about: listing?.description ?? listing?.shortDescription ?? null,
     surfaces,
-    findings: reportFindings,
+    findings: dedupeFindings(reportFindings),
     strengths,
     listing: {
       developer: listing?.developer,

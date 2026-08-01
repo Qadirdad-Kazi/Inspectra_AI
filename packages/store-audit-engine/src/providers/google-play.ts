@@ -121,6 +121,10 @@ export const googlePlayProvider: StoreProvider = {
       '';
     const developer =
       $('a[href*="/store/apps/dev"]').first().text().trim() ||
+      $('a[href*="/store/apps/developer"]').first().text().trim() ||
+      $('[itemprop="author"] [itemprop="name"]').first().text().trim() ||
+      $('[itemprop="author"]').first().text().trim() ||
+      html.match(/"Offered by"\s*,\s*"([^"]+)"/)?.[1]?.trim() ||
       $('div:contains("Offered by")').next().text().trim() ||
       'Unknown developer';
 
@@ -138,8 +142,15 @@ export const googlePlayProvider: StoreProvider = {
 
     const screenshotUrls = extractPlayScreenshotUrls(html, iconUrl);
 
+    const categoryFromPath = html.match(/\/store\/apps\/category\/([A-Z0-9_]+)/)?.[1];
     const category =
-      $('a[href*="/store/apps/category/"]').first().text().trim() || undefined;
+      $('a[href*="/store/apps/category/"]').first().text().trim() ||
+      (categoryFromPath
+        ? categoryFromPath
+            .replace(/^GAME_/, 'Game · ')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+        : undefined);
 
     const installsText =
       $('div:contains("Downloads")').parent().text().match(/[\d,.]+[KMB+]*/)?.[0] ||

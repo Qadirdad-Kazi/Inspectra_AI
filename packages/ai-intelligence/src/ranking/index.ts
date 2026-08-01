@@ -30,14 +30,40 @@ export function prioritizeRecommendations(
   recommendations: Recommendation[],
 ): Recommendation[] {
   const byTitle = new Map<string, Recommendation>();
+  let screenshotSlot: Recommendation | null = null;
+
   for (const r of recommendations) {
     const key = r.title.toLowerCase().trim();
+    const isScreenshotNoise =
+      /^(no |few )?screenshots?\b/i.test(key) ||
+      /\bscreenshots? (to review|found|for conversion|detected|missing)\b/i.test(key);
+
+    if (isScreenshotNoise) {
+      if (!screenshotSlot || recommendationScore(r) > recommendationScore(screenshotSlot)) {
+        screenshotSlot = {
+          ...r,
+          title: 'No store screenshots detected',
+          summary:
+            'Listing scrape returned zero screenshot URLs. Creative/ASO review needs store frames.',
+          actions: [
+            'Re-run with an official Play / App Store / Microsoft Store product URL after API deploy',
+            ...(r.actions ?? [])
+              .filter((a) => !/^Investigate and remediate:/i.test(a))
+              .slice(0, 1),
+          ],
+        };
+      }
+      continue;
+    }
+
     const existing = byTitle.get(key);
     if (!existing || recommendationScore(r) > recommendationScore(existing)) {
       byTitle.set(key, r);
     }
   }
-  return [...byTitle.values()].sort(
-    (a, b) => recommendationScore(b) - recommendationScore(a),
-  );
+
+  const merged = [...byTitle.values()];
+  if (screenshotSlot) merged.push(screenshotSlot);
+
+  return merged.sort((a, b) => recommendationScore(b) - recommendationScore(a));
 }
