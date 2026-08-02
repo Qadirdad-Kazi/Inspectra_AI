@@ -93,7 +93,8 @@ DATABASE_URL="<External Database URL>?schema=public" pnpm --filter @inspectra/db
 | `AUTH_SECRET` | different `openssl rand -hex 32` |
 | `WEB_URL` | Vercel origin, e.g. `https://your-app.vercel.app` |
 | `TRUST_PROXY` | `1` |
-| `AI_DEFAULT_PROVIDER` | `stub` |
+| `AI_DEFAULT_PROVIDER` | `auto` (or `openai` / `openrouter` / `gemini` / `stub`) |
+| `OPENROUTER_API_KEY` / `GEMINI_API_KEY` / `OPENAI_API_KEY` | Set one on Render for LLM enrichment |
 | `ENABLE_SWAGGER` | `false` |
 
 ### Verify

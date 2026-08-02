@@ -60,15 +60,15 @@ export function buildAiReport(input: {
   };
 }
 
-/** Optional LLM enrichment when OPENAI_API_KEY is present. */
+/** Optional LLM enrichment when OpenAI / OpenRouter / Gemini is configured. */
 export async function maybeEnrichWithLlm(
   report: WebsiteAuditOutput['aiReport'],
   context: { url: string; scores: ScoreBreakdown; findings: FindingDraft[] },
 ): Promise<WebsiteAuditOutput['aiReport']> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return report;
-
   try {
+    const { chatCompletions, isLlmAvailable, safeParseJson } = await import('@inspectra/llm');
+    if (!isLlmAvailable()) return report;
+
     const prompt = {
       url: context.url,
       overall: context.scores.overall,
@@ -79,38 +79,26 @@ export async function maybeEnrichWithLlm(
       })),
     };
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-        temperature: 0.2,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are Inspectra AI. Return JSON with keys executiveSummary (string) and recommendations (array of {priority,title,detail}). Be concise and actionable.',
-          },
-          { role: 'user', content: JSON.stringify(prompt) },
-        ],
-        response_format: { type: 'json_object' },
-      }),
-      signal: AbortSignal.timeout(30000),
+    const result = await chatCompletions({
+      temperature: 0.2,
+      json: true,
+      timeoutMs: 30000,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are Inspectra AI. Return JSON with keys executiveSummary (string) and recommendations (array of {priority,title,detail}). Be concise and actionable.',
+        },
+        { role: 'user', content: JSON.stringify(prompt) },
+      ],
     });
+    if (!result?.text) return report;
 
-    if (!res.ok) return report;
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = json.choices?.[0]?.message?.content;
-    if (!content) return report;
-    const parsed = JSON.parse(content) as {
+    const parsed = safeParseJson<{
       executiveSummary?: string;
       recommendations?: Array<{ priority: string; title: string; detail: string }>;
-    };
+    }>(result.text);
+    if (!parsed) return report;
 
     return {
       title: report.title,

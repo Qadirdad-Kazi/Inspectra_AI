@@ -23,7 +23,10 @@ services:
       - key: TRUST_PROXY
         value: "1"
       - key: AI_DEFAULT_PROVIDER
-        value: stub
+        value: auto
+      # Set one of these in the Render dashboard (sync: false secrets):
+      # OPENROUTER_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY
+      # Optional: AI_PROVIDER=openrouter|gemini|openai
       - key: ENABLE_SWAGGER
         value: "false"
       - key: DATABASE_URL

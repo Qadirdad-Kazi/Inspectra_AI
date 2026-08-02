@@ -22,7 +22,7 @@ This phase's store engine is **observational** for findings. Prioritized fix rec
 4. **Modules** (registry, independently toggleable):
    - `metadata` (0.18)
    - `aso` (0.20)
-   - `screenshots` (0.17) — multimodal vision when `OPENAI_API_KEY` is set; else heuristics  
+   - `screenshots` (0.17) — multimodal vision when OpenAI / OpenRouter / Gemini is configured; else heuristics  
    - `icon` (0.12)
    - `reviews` (0.18)
    - `competitors` (0.15)

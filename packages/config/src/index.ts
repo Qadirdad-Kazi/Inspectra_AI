@@ -19,7 +19,7 @@ export const envSchema = z.object({
   TEMPORAL_NAMESPACE: z.string().default('default'),
   ORCHESTRATOR_TASK_QUEUE: z.string().default('inspectra-scans'),
   AUTH_SECRET: z.string().min(8).optional(),
-  AI_DEFAULT_PROVIDER: z.string().default('stub'),
+  AI_DEFAULT_PROVIDER: z.string().default('auto'),
   FEATURE_AI_TRIAGE: boolFromEnv,
   FEATURE_SAAS_AUDITS: boolFromEnv,
 });

@@ -620,6 +620,9 @@ importers:
 
   packages/ai-intelligence:
     dependencies:
+      '@inspectra/llm':
+        specifier: workspace:*
+        version: link:../llm
       '@inspectra/redaction':
         specifier: workspace:*
         version: link:../redaction
@@ -723,6 +726,22 @@ importers:
       typescript-eslint:
         specifier: ^8.32.1
         version: 8.65.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
+
+  packages/llm:
+    dependencies:
+      '@inspectra/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.21
+        version: 22.20.1
+      vitest:
+        specifier: ^3.1.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)
 
   packages/logger:
     dependencies:
@@ -843,6 +862,9 @@ importers:
       '@inspectra/audit-contracts':
         specifier: workspace:*
         version: link:../audit-contracts
+      '@inspectra/llm':
+        specifier: workspace:*
+        version: link:../llm
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -892,6 +914,9 @@ importers:
       '@inspectra/audit-contracts':
         specifier: workspace:*
         version: link:../audit-contracts
+      '@inspectra/llm':
+        specifier: workspace:*
+        version: link:../llm
       '@inspectra/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

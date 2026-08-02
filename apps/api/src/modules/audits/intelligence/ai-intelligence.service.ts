@@ -192,7 +192,7 @@ export class AiIntelligenceService {
       memory: this.memory,
       enableLlm: allowLlm,
       modelConfig: {
-        defaultModel: process.env.OPENAI_MODEL,
+        // Resolved from AI_PROVIDER + OPENAI_/OPENROUTER_/GEMINI_ keys in @inspectra/llm
         agentModels: {},
       },
     };

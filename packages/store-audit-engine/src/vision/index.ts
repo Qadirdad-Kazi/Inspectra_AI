@@ -1,8 +1,10 @@
 /**
  * Multimodal helpers for icon/screenshot review.
- * Uses OpenAI vision when OPENAI_API_KEY is set; otherwise heuristic-only.
+ * Uses OpenAI / OpenRouter / Gemini vision when configured; otherwise heuristic-only.
  * Does NOT generate fix suggestions (prompt six scope).
  */
+
+import { chatCompletions, isLlmAvailable, safeParseJson } from '@inspectra/llm';
 
 export type VisionObservation = {
   target: string;
@@ -16,48 +18,35 @@ async function analyzeWithVision(
   imageUrl: string,
   prompt: string,
 ): Promise<{ observations: string[]; risks: string[]; qualityScore: number } | null> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key || !imageUrl) return null;
+  if (!isLlmAvailable() || !imageUrl) return null;
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_VISION_MODEL ?? 'gpt-4o-mini',
-        temperature: 0.2,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are Inspectra store creative analyst. Return JSON {observations:string[], risks:string[], qualityScore:number}. Do NOT suggest how to fix — observe only.',
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageUrl } },
-            ],
-          },
-        ],
-      }),
-      signal: AbortSignal.timeout(45000),
+    const result = await chatCompletions({
+      vision: true,
+      temperature: 0.2,
+      json: true,
+      timeoutMs: 45000,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are Inspectra store creative analyst. Return JSON {observations:string[], risks:string[], qualityScore:number}. Do NOT suggest how to fix — observe only.',
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        },
+      ],
     });
-    if (!res.ok) return null;
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = json.choices?.[0]?.message?.content;
-    if (!content) return null;
-    return JSON.parse(content) as {
+    if (!result?.text) return null;
+    return safeParseJson<{
       observations: string[];
       risks: string[];
       qualityScore: number;
-    };
+    }>(result.text);
   } catch {
     return null;
   }

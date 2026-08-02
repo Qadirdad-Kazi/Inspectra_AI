@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@inspectra/redaction": "workspace:*",
+    "@inspectra/llm": "workspace:*",
     "@inspectra/tsconfig": "workspace:*",
     "typescript": "^5.8.3"
   },

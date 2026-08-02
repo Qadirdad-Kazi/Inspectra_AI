@@ -107,7 +107,7 @@ export type ModelSelectionConfig = {
   agentModels?: Partial<Record<AgentId, string>>;
   temperature?: number;
   maxTokens?: number;
-  provider?: 'openai' | 'none';
+  provider?: 'openai' | 'openrouter' | 'gemini' | 'none';
 };
 
 export type IntelligenceInput = {
