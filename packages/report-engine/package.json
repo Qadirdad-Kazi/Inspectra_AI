@@ -22,7 +22,7 @@
   "dependencies": {
     "@inspectra/audit-contracts": "workspace:*",
     "@inspectra/tsconfig": "workspace:*",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

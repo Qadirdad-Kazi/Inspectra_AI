@@ -55,6 +55,6 @@
     "@inspectra/tsconfig": "workspace:*",
     "prettier": "^3.5.3",
     "turbo": "^2.5.4",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.3"
   }
 }
