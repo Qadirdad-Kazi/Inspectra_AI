@@ -136,11 +136,14 @@ function dedupeFindings(items: ReportFinding[]): ReportFinding[] {
 
 function humanRemediation(item: ReportFinding): string | null | undefined {
   const rem = item.remediation?.trim();
-  if (rem && !/^Investigate and remediate:/i.test(rem)) return rem;
-  if (item.description?.trim()) {
-    return `Next step: ${item.description.trim().replace(/\.$/, '')}.`;
+  if (!rem || /^Investigate and remediate:/i.test(rem)) return undefined;
+  const stripped = rem.replace(/^Next step:\s*/i, '').trim();
+  const desc = item.description?.trim();
+  // Don't repeat the finding body as a "next step"
+  if (!stripped || (desc && stripped.replace(/\.$/, '') === desc.replace(/\.$/, ''))) {
+    return undefined;
   }
-  return 'Open the related evidence in this report and confirm whether this is a real listing issue or incomplete scrape data.';
+  return stripped;
 }
 
 export function mapAuditToReportModel(

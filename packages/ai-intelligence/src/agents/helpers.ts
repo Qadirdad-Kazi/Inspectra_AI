@@ -101,9 +101,11 @@ export function fromFindings(input: {
       actions: f.remediation
         ? [f.remediation]
         : [
-            f.description?.trim()
-              ? `Next step: ${f.description.trim().replace(/\.$/, '')}.`
-              : `Review the ${f.category.replace(/_/g, ' ')} evidence in the report and decide whether this is a listing issue or a scrape gap.`,
+            f.category === 'competitors'
+              ? 'Add competitor store IDs in the audit config when you want peer comparison.'
+              : f.category === 'reviews'
+                ? 'Aggregate rating still applies; detailed review themes need a public review feed.'
+                : `Check the ${f.category.replace(/_/g, ' ')} section for evidence, then decide if this is a listing issue or incomplete scrape data.`,
           ],
       relatedFindings: [f.fingerprint],
       confidence: 0.8,

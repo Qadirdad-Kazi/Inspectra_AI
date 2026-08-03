@@ -13,7 +13,7 @@ const PLAY =
   /(?:play\.google\.com\/store\/apps\/details\?[^\s]*id=|market:\/\/details\?id=)?([a-zA-Z][\w.]*\.[a-zA-Z][\w.]*)/;
 const APPLE_ID = /(?:apps\.apple\.com\/[^\s]*\/id|itunes\.apple\.com\/[^\s]*\/id)?(\d{5,})/;
 const MS =
-  /(?:apps\.microsoft\.com\/[^\s]*\/detail\/|microsoft\.com\/[^\s]*\/p\/[^\s]*\/)?([0-9A-Z]{12})/i;
+  /(?:apps\.microsoft\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?detail\/|microsoft\.com\/[^\s]*\/p\/[^/]+\/|store\/productId\/)?([0-9a-z]{12})(?:\?|$|\/|&)/i;
 
 export function detectAuditTarget(raw: string): DetectedTarget | null {
   const input = raw.trim();
@@ -34,8 +34,8 @@ export function detectAuditTarget(raw: string): DetectedTarget | null {
     }
   }
 
-  if (/apps\.microsoft\.com|microsoft\.com.*store/i.test(input) || /^[0-9A-Z]{12}$/i.test(input)) {
-    const m = input.match(MS);
+  if (/apps\.microsoft\.com|microsoft\.com.*store|store\/productId/i.test(input) || /^[0-9A-Z]{12}$/i.test(input)) {
+    const m = input.match(MS) || input.match(/detail\/([0-9a-z]{12})/i) || input.match(/^([0-9a-z]{12})$/i);
     if (m?.[1]) {
       return { kind: 'msstore', value: m[1].toUpperCase(), label: 'Microsoft Store' };
     }
