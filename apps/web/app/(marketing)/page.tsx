@@ -42,7 +42,7 @@ export default function MarketingPage() {
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-600">
           Websites and app store listings — scored, prioritized, and explained in plain language.
-          No OAuth setup required to try a demo.
+          New workspaces include 1 free live audit; browse demos with no account.
         </p>
 
         <div className="mt-10 max-w-3xl">

@@ -123,7 +123,7 @@ export class BillingService {
     if (credits < 1) {
       throw new BadRequestException({
         code: 'NO_AUDIT_CREDITS',
-        message: 'No audit credits left. Buy a one-time package on Packages.',
+        message: 'No audit credits left. Your free starter credit is used — buy a one-time package on Packages, or browse sample demos.',
       });
     }
     meta.auditCredits = credits - 1;

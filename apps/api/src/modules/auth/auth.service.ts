@@ -23,6 +23,14 @@ import type {
   SignUpDto,
 } from './dto/auth.dto';
 
+/** Free live-audit credits granted to every new workspace (override via FREE_SIGNUP_AUDIT_CREDITS). */
+function freeSignupCredits(): number {
+  const raw = process.env.FREE_SIGNUP_AUDIT_CREDITS;
+  if (raw === undefined || raw === '') return 1;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 1;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -298,7 +306,14 @@ export class AuthService {
         data: {
           name: input.orgName,
           slug,
-          settings: { create: {} },
+          settings: {
+            create: {
+              metadata: {
+                auditCredits: freeSignupCredits(),
+                freeSignupCreditsGranted: freeSignupCredits(),
+              },
+            },
+          },
           memberships: {
             create: { userId: user.id, role: MembershipRole.owner },
           },
@@ -311,7 +326,10 @@ export class AuthService {
               channel: 'in_app',
               status: 'sent',
               title: 'Welcome to Inspectra',
-              body: 'Your organization is ready. Audit engines will unlock in a later release.',
+              body:
+                freeSignupCredits() > 0
+                  ? `Your workspace includes ${freeSignupCredits()} free audit credit${freeSignupCredits() === 1 ? '' : 's'} to try a live scan. Browse demos anytime, then buy a pack when you need more.`
+                  : 'Your organization is ready. Browse demos or buy a pack to run live audits.',
               sentAt: new Date(),
               dedupeKey: `welcome:${user.id}`,
             },

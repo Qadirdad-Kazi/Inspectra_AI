@@ -31,7 +31,20 @@ export const iconModule: StoreModule = {
     }
 
     const observation = await observeIcon(listing.iconUrl);
-    if (observation.qualityScore < 50) {
+    if (observation.source !== 'vision-llm') {
+      findings.push({
+        fingerprint: fingerprint(['icon', 'vision-off', listing.storeId]),
+        title: 'AI vision not enabled for icon review',
+        description:
+          'Icon URL resolved, but no LLM vision provider is configured. Scores are heuristic only.',
+        severity: 'info',
+        category: 'icon',
+        remediation:
+          'Configure OPENROUTER_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY on the API and re-run for vision-backed icon notes.',
+      });
+    }
+
+    if (observation.source === 'vision-llm' && observation.qualityScore < 50) {
       score = deduct(score, findings, {
         fingerprint: fingerprint(['icon', 'quality', listing.storeId]),
         title: 'Icon observational quality is low',
@@ -39,18 +52,22 @@ export const iconModule: StoreModule = {
         severity: 'medium',
         category: 'icon',
         metadata: { source: observation.source },
+        remediation: 'Simplify the icon: stronger silhouette, higher contrast, fewer fine details.',
       }, 12);
     }
 
-    for (const risk of observation.risks.slice(0, 3)) {
-      findings.push({
-        fingerprint: fingerprint(['icon', 'risk', listing.storeId, risk]),
-        title: `Icon observation: ${risk}`,
-        description: observation.observations[0] ?? risk,
-        severity: 'info',
-        category: 'icon',
-        metadata: { source: observation.source },
-      });
+    if (observation.source === 'vision-llm') {
+      for (const risk of observation.risks.slice(0, 3)) {
+        findings.push({
+          fingerprint: fingerprint(['icon', 'risk', listing.storeId, risk]),
+          title: `Icon observation: ${risk}`,
+          description: observation.observations[0] ?? risk,
+          severity: 'info',
+          category: 'icon',
+          metadata: { source: observation.source },
+          remediation: 'Compare against top peers in your category and tighten recognizability.',
+        });
+      }
     }
 
     // Structural heuristic: very long query strings sometimes indicate tiny thumbs

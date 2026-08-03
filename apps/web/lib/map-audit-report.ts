@@ -101,10 +101,12 @@ function dedupeFindings(items: ReportFinding[]): ReportFinding[] {
   for (const item of items) {
     const key = item.title.toLowerCase();
     const isScreenshotNoise =
-      /^(no |few )?screenshots?\b/i.test(key) ||
-      /\bscreenshots? (to review|found|for conversion|detected|missing)\b/i.test(key);
+      /screenshot/i.test(key) &&
+      /(could not be loaded|no store|to review|found|for conversion|detected|missing|zero|scrape)/i.test(
+        key + ' ' + item.description,
+      );
 
-    if (isScreenshotNoise) {
+    if (isScreenshotNoise && !/vision not enabled/i.test(key)) {
       if (
         !screenshotSlot ||
         (SEVERITY_RANK[item.severity.toLowerCase()] ?? 0) >
@@ -112,21 +114,33 @@ function dedupeFindings(items: ReportFinding[]): ReportFinding[] {
       ) {
         screenshotSlot = {
           ...item,
-          title: 'No store screenshots detected',
-          remediation:
-            item.remediation && !/^Investigate and remediate:/i.test(item.remediation)
-              ? item.remediation
-              : 'Re-run with an official Play / App Store / Microsoft Store URL after the latest API deploy.',
+          title: 'Store screenshots could not be loaded',
+          description:
+            item.description ||
+            'Listing scrape returned zero screenshot URLs. This is a collection gap, not a creative critique of your real frames.',
+          remediation: humanRemediation(item),
         };
       }
       continue;
     }
 
-    out.push(item);
+    out.push({
+      ...item,
+      remediation: humanRemediation(item),
+    });
   }
 
   if (screenshotSlot) out.unshift(screenshotSlot);
   return out;
+}
+
+function humanRemediation(item: ReportFinding): string | null | undefined {
+  const rem = item.remediation?.trim();
+  if (rem && !/^Investigate and remediate:/i.test(rem)) return rem;
+  if (item.description?.trim()) {
+    return `Next step: ${item.description.trim().replace(/\.$/, '')}.`;
+  }
+  return 'Open the related evidence in this report and confirm whether this is a real listing issue or incomplete scrape data.';
 }
 
 export function mapAuditToReportModel(

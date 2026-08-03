@@ -106,8 +106,12 @@ export default function BillingPage() {
           )}
           {!unlimited && entitlements && entitlements.auditCredits < 1 ? (
             <p className="mt-3 text-sm text-amber-800">
-              No credits left.{' '}
-              <span className="font-medium">Buy a pack below</span> to run audits.
+              Free starter credit used.{' '}
+              <span className="font-medium">Buy a pack below</span> or{' '}
+              <a href="/demo" className="font-medium underline">
+                browse sample demos
+              </a>
+              .
             </p>
           ) : null}
         </CardContent>

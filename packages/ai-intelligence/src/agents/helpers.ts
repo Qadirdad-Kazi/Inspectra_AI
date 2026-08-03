@@ -100,7 +100,11 @@ export function fromFindings(input: {
       technical: input.mapTechnical(f),
       actions: f.remediation
         ? [f.remediation]
-        : [`Investigate and remediate: ${f.title}`],
+        : [
+            f.description?.trim()
+              ? `Next step: ${f.description.trim().replace(/\.$/, '')}.`
+              : `Review the ${f.category.replace(/_/g, ' ')} evidence in the report and decide whether this is a listing issue or a scrape gap.`,
+          ],
       relatedFindings: [f.fingerprint],
       confidence: 0.8,
       model: input.model,

@@ -402,7 +402,13 @@ export function AuditReportView({
                   <p className="mt-1 text-sm text-slate-600">{f.description}</p>
                   {f.remediation ? (
                     <div className="mt-3 rounded-xl bg-slate-950 px-3 py-2 text-sm text-slate-100">
-                      <span className="font-semibold text-teal-300">Fix · </span>
+                      <span className="font-semibold text-teal-300">
+                        {/could not be loaded|vision not enabled|scrape|collection gap|not configured/i.test(
+                          `${f.title} ${f.description}`,
+                        )
+                          ? 'Note · '
+                          : 'Fix · '}
+                      </span>
                       {f.remediation}
                     </div>
                   ) : null}

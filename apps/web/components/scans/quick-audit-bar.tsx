@@ -80,7 +80,7 @@ export function QuickAuditBar({
 
     if (!user) {
       stashPendingTarget(target);
-      toast.message('Create a free workspace to run this audit');
+      toast.message('Create a free workspace — includes 1 live audit');
       router.push(`${guestHref}?next=/audits&autostart=1`);
       return;
     }

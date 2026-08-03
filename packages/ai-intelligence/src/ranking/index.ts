@@ -42,11 +42,11 @@ export function prioritizeRecommendations(
       if (!screenshotSlot || recommendationScore(r) > recommendationScore(screenshotSlot)) {
         screenshotSlot = {
           ...r,
-          title: 'No store screenshots detected',
+          title: 'Store screenshots could not be loaded',
           summary:
-            'Listing scrape returned zero screenshot URLs. Creative/ASO review needs store frames.',
+            'Listing scrape returned zero screenshot URLs. This is a collection gap — not a creative critique of your real store frames.',
           actions: [
-            'Re-run with an official Play / App Store / Microsoft Store product URL after API deploy',
+            'Re-run with an official Play / App Store / Microsoft Store product URL',
             ...(r.actions ?? [])
               .filter((a) => !/^Investigate and remediate:/i.test(a))
               .slice(0, 1),

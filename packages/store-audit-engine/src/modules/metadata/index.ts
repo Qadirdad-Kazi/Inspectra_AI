@@ -32,9 +32,12 @@ export const metadataModule: StoreModule = {
       score = deduct(score, findings, {
         fingerprint: fingerprint(['meta', 'dev', listing.storeId]),
         title: 'Developer / publisher name unresolved',
-        description: 'Could not extract a clear developer identity from the listing.',
+        description:
+          'We could not extract a clear developer identity from the scraped listing HTML/API. Confirm the store page shows a publisher name — if it does, this is a scrape gap.',
         severity: 'medium',
         category: 'metadata',
+        remediation:
+          'Open the live store listing and verify the developer name. Re-run with the official store URL if the scrape looks incomplete.',
       }, 10);
     }
 
@@ -45,6 +48,8 @@ export const metadataModule: StoreModule = {
         description: 'Full description should explain value proposition and features.',
         severity: 'high',
         category: 'metadata',
+        remediation:
+          'Expand the store description with benefits, features, and keywords users search for.',
       }, 15);
     }
 
@@ -52,9 +57,12 @@ export const metadataModule: StoreModule = {
       score = deduct(score, findings, {
         fingerprint: fingerprint(['meta', 'category', listing.storeId]),
         title: 'Category missing',
-        description: 'Primary category helps discovery and ASO relevance.',
+        description:
+          'Primary category was not present in scraped metadata. If the store page shows a category, treat this as incomplete scrape data.',
         severity: 'medium',
         category: 'metadata',
+        remediation:
+          'Confirm category on the live listing; set the most specific category for discovery if it is truly unset.',
       }, 8);
     }
 
@@ -65,6 +73,8 @@ export const metadataModule: StoreModule = {
         description: 'Listing icon could not be resolved for analysis.',
         severity: 'high',
         category: 'metadata',
+        remediation:
+          'Verify the store listing shows an icon, then re-run with the official store URL.',
       }, 12);
     }
 

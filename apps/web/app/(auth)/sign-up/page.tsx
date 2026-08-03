@@ -46,7 +46,9 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create your workspace</CardTitle>
-          <CardDescription>Email/password signup provisions org + owner role.</CardDescription>
+          <CardDescription>
+            Includes 1 free live audit. Browse sample demos anytime — no card required to start.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-3" onSubmit={onSubmit}>
