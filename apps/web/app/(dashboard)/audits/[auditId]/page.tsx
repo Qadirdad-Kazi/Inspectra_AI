@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
@@ -81,6 +81,7 @@ type AuditDetail = {
 
 export default function AuditDetailPage() {
   const params = useParams<{ auditId: string }>();
+  const router = useRouter();
   const { activeOrgId } = useAuth();
   const [audit, setAudit] = useState<AuditDetail | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -89,6 +90,7 @@ export default function AuditDetailPage() {
   const [commentBody, setCommentBody] = useState('');
   const [showOps, setShowOps] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     if (!activeOrgId || !params.auditId) return;
@@ -146,6 +148,27 @@ export default function AuditDetailPage() {
     });
     toast.message('Cancel requested');
     await load();
+  }
+
+  async function removeAudit() {
+    if (!activeOrgId || !params.auditId || !audit) return;
+    const label = audit.asset?.identifier ?? params.auditId;
+    const ok = window.confirm(
+      `Delete audit for “${label}”? This permanently removes findings, reports, events, and comments from the database.`,
+    );
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/organizations/${activeOrgId}/audits/${params.auditId}`, {
+        method: 'DELETE',
+        orgId: activeOrgId,
+      });
+      toast.success('Audit deleted');
+      router.replace('/audits');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+      setDeleting(false);
+    }
   }
 
   async function rerunIntelligence() {
@@ -282,6 +305,15 @@ export default function AuditDetailPage() {
               Cancel
             </Button>
           ) : null}
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-red-50"
+            disabled={deleting}
+            onClick={() => void removeAudit()}
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </Button>
         </div>
       </div>
 

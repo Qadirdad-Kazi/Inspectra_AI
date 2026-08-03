@@ -458,6 +458,52 @@ export class AuditsService {
     return this.serializeAudit(updated);
   }
 
+  /**
+   * Permanently delete an audit and related rows.
+   * Cascades: stages, events, findings (+ triage), reports (+ artifacts), comments.
+   * Also removes job runs / AI memory linked to this audit, and orphan assets with no remaining audits.
+   * Report bodies live in DB (events/config) — no separate object store to clear today.
+   */
+  async deleteAudit(organizationId: string, auditId: string) {
+    const audit = await this.prisma.audit.findFirst({
+      where: { id: auditId, organizationId },
+      select: { id: true, assetId: true, status: true },
+    });
+    if (!audit) {
+      throw new NotFoundException({ code: 'AUDIT_NOT_FOUND', message: 'Audit not found' });
+    }
+
+    // Stop in-flight runners that poll for cancelled status
+    if (!['succeeded', 'failed', 'cancelled'].includes(audit.status)) {
+      await this.prisma.audit.update({
+        where: { id: auditId },
+        data: {
+          status: AuditStatus.cancelled,
+          finishedAt: new Date(),
+          errorMessage: 'Deleted by user',
+        },
+      });
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.jobRun.deleteMany({ where: { auditId } });
+      await tx.aiMemoryEntry.deleteMany({ where: { auditId } });
+      // Findings → triage, reports → artifacts, stages, events, comments cascade from Audit
+      await tx.audit.delete({ where: { id: auditId } });
+
+      const remaining = await tx.audit.count({ where: { assetId: audit.assetId } });
+      if (remaining === 0) {
+        // Safe to remove orphan target asset (schedules on asset cascade)
+        await tx.auditSchedule.deleteMany({ where: { assetId: audit.assetId } });
+        await tx.asset.deleteMany({
+          where: { id: audit.assetId, organizationId },
+        });
+      }
+    });
+
+    return { ok: true as const, id: auditId };
+  }
+
   async runIntelligence(organizationId: string, auditId: string) {
     const audit = await this.ensureAudit(organizationId, auditId);
     if (audit.status !== 'succeeded' && audit.status !== 'failed') {

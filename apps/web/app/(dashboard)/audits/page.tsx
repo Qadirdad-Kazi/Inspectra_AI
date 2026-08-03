@@ -31,6 +31,7 @@ function AuditsInner() {
   const [audits, setAudits] = useState<AuditRow[]>([]);
   const [pendingLabel, setPendingLabel] = useState<string | null>(null);
   const [advanced, setAdvanced] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function load() {
     if (!activeOrgId) return;
@@ -38,6 +39,27 @@ function AuditsInner() {
       orgId: activeOrgId,
     });
     setAudits(res.data);
+  }
+
+  async function removeAudit(auditId: string, label: string) {
+    if (!activeOrgId) return;
+    const ok = window.confirm(
+      `Delete audit for “${label}”? This permanently removes findings, reports, events, and comments from the database.`,
+    );
+    if (!ok) return;
+    setDeletingId(auditId);
+    try {
+      await apiFetch(`/organizations/${activeOrgId}/audits/${auditId}`, {
+        method: 'DELETE',
+        orgId: activeOrgId,
+      });
+      toast.success('Audit deleted');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   useEffect(() => {
@@ -139,32 +161,45 @@ function AuditsInner() {
       <Card>
         <CardHeader>
           <CardTitle>History</CardTitle>
-          <CardDescription>Newest first — open any row for the full report.</CardDescription>
+          <CardDescription>Newest first — open any row for the full report. Delete removes it from the database.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {audits.length === 0 ? (
             <p className="text-sm text-muted">No audits yet. Paste a link above to begin.</p>
           ) : (
             audits.map((a) => (
-              <Link
+              <div
                 key={a.id}
-                href={`/audits/${a.id}`}
-                className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm transition hover:border-teal-700/30 hover:bg-white"
+                className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm transition hover:border-teal-700/30 hover:bg-white"
               >
-                <div>
-                  <div className="font-medium">{a.asset?.identifier ?? a.id}</div>
+                <Link href={`/audits/${a.id}`} className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{a.asset?.identifier ?? a.id}</div>
                   <div className="text-xs text-muted">
                     {a.asset?.type ? `${a.asset.type} · ` : ''}
                     {new Date(a.createdAt).toLocaleString()}
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
+                </Link>
+                <div className="flex shrink-0 items-center gap-2">
                   {a.scores?.overall != null ? (
                     <span className="font-semibold tabular-nums">{a.scores.overall}/100</span>
                   ) : null}
                   <Badge className="capitalize">{a.status}</Badge>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-red-50"
+                    disabled={deletingId === a.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void removeAudit(a.id, a.asset?.identifier ?? a.id);
+                    }}
+                  >
+                    {deletingId === a.id ? '…' : 'Delete'}
+                  </Button>
                 </div>
-              </Link>
+              </div>
             ))
           )}
         </CardContent>

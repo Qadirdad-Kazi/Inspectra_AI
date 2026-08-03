@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -90,6 +91,18 @@ export class AuditsController {
     @Param('auditId') auditId: string,
   ) {
     return this.auditsService.getAudit(organizationId, auditId);
+  }
+
+  @Delete('audits/:auditId')
+  @Roles('analyst')
+  @ApiOperation({
+    summary: 'Permanently delete an audit and all related DB rows (findings, reports, events, comments)',
+  })
+  deleteAudit(
+    @Param('organizationId') organizationId: string,
+    @Param('auditId') auditId: string,
+  ) {
+    return this.auditsService.deleteAudit(organizationId, auditId);
   }
 
   @Post('audits/:auditId/cancel')
