@@ -151,6 +151,9 @@ importers:
       '@inspectra/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@inspectra/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@inspectra/logger':
         specifier: workspace:*
         version: link:../../packages/logger

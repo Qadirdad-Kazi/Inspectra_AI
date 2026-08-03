@@ -83,9 +83,33 @@ export async function chatCompletions(
 }
 
 export function safeParseJson<T>(text: string): T | null {
+  const raw = text?.trim();
+  if (!raw) return null;
+
   try {
-    return JSON.parse(text) as T;
+    return JSON.parse(raw) as T;
   } catch {
-    return null;
+    /* continue */
   }
+
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    try {
+      return JSON.parse(fenced[1].trim()) as T;
+    } catch {
+      /* continue */
+    }
+  }
+
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    try {
+      return JSON.parse(raw.slice(start, end + 1)) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }

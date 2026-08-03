@@ -18,7 +18,15 @@ const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai';
 
 function firstEnv(...keys: string[]): string | undefined {
   for (const key of keys) {
-    const v = process.env[key]?.trim();
+    let v = process.env[key]?.trim();
+    if (!v) continue;
+    // Common paste mistake: KEY="value" stored with quotes
+    if (
+      (v.startsWith('"') && v.endsWith('"')) ||
+      (v.startsWith("'") && v.endsWith("'"))
+    ) {
+      v = v.slice(1, -1).trim();
+    }
     if (v) return v;
   }
   return undefined;
@@ -45,10 +53,10 @@ function defaultsFor(provider: Exclude<LlmProviderId, 'none'>): {
       baseUrl: firstEnv('LLM_BASE_URL', 'OPENROUTER_BASE_URL') ?? OPENROUTER_BASE,
       defaultModel:
         firstEnv('LLM_MODEL', 'OPENROUTER_MODEL', 'OPENAI_MODEL') ??
-        'google/gemini-2.0-flash-001',
+        'google/gemini-2.5-flash',
       visionModel:
         firstEnv('LLM_VISION_MODEL', 'OPENROUTER_VISION_MODEL', 'OPENAI_VISION_MODEL') ??
-        'google/gemini-2.0-flash-001',
+        'google/gemini-2.5-flash',
       headers: {
         'HTTP-Referer': firstEnv('OPENROUTER_SITE_URL', 'WEB_URL') ?? 'https://inspectra.ai',
         'X-Title': firstEnv('OPENROUTER_APP_NAME') ?? 'Inspectra AI',

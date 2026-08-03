@@ -18,6 +18,7 @@
     "@inspectra/config": "workspace:*",
     "@inspectra/db": "workspace:*",
     "@inspectra/logger": "workspace:*",
+    "@inspectra/llm": "workspace:*",
     "@inspectra/report-engine": "workspace:^",
     "@inspectra/store-audit-engine": "workspace:^",
     "@inspectra/web-audit-engine": "workspace:^",

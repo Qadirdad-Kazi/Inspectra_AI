@@ -32,15 +32,21 @@ export const iconModule: StoreModule = {
 
     const observation = await observeIcon(listing.iconUrl);
     if (observation.source !== 'vision-llm') {
+      const err = observation.error ?? 'no LLM vision provider configured';
+      const looksUnconfigured = /LLM unavailable|not configured/i.test(err);
       findings.push({
         fingerprint: fingerprint(['icon', 'vision-off', listing.storeId]),
-        title: 'AI vision not enabled for icon review',
-        description:
-          'Icon URL resolved, but no LLM vision provider is configured. Scores are heuristic only.',
+        title: looksUnconfigured
+          ? 'AI vision not enabled for icon review'
+          : 'AI vision call failed for icon',
+        description: looksUnconfigured
+          ? 'Icon URL resolved, but no LLM vision provider is configured on the API. Scores are heuristic only.'
+          : `Icon URL resolved, but vision analysis failed (${err}). Scores are heuristic only.`,
         severity: 'info',
         category: 'icon',
-        remediation:
-          'Configure OPENROUTER_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY on the API and re-run for vision-backed icon notes.',
+        remediation: looksUnconfigured
+          ? 'On the Render API service set OPENROUTER_API_KEY (or GEMINI/OPENAI), AI_DEFAULT_PROVIDER=auto (or openrouter), and ensure AI_PROVIDER is not stub. Re-deploy, then re-run.'
+          : 'Check Render API logs for [store-vision] errors, verify model + credits, then re-run.',
       });
     }
 

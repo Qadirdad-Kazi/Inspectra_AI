@@ -156,10 +156,16 @@ async function bootstrap() {
 
   const port = Number(process.env.API_PORT ?? 4000);
   await app.listen(port);
+
+  const { resolveLlmConfig } = await import('@inspectra/llm');
+  const llm = resolveLlmConfig();
   log.info('api listening', {
     port,
     env: process.env.NODE_ENV ?? 'development',
     corsOrigins,
+    llmProvider: llm.provider,
+    llmAvailable: llm.available,
+    llmVisionModel: llm.visionModel,
   });
 }
 
