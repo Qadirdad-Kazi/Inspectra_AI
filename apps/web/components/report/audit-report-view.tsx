@@ -268,6 +268,7 @@ export function AuditReportView({
               <img
                 src={model.listing.iconUrl}
                 alt=""
+                referrerPolicy="no-referrer"
                 className="h-16 w-16 rounded-2xl border border-slate-200 object-cover"
               />
             ) : (
@@ -330,6 +331,8 @@ export function AuditReportView({
                       <img
                         src={src}
                         alt={`Screenshot ${i + 1}`}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
                         className="h-48 w-28 rounded-xl border border-slate-200 object-cover object-top"
                       />
                       {badge ? (

@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { QuickAuditBar } from '@/components/scans/quick-audit-bar';
 import { Button } from '@/components/ui/button';
 import { BUILTIN_DEMOS, toTenScale } from '@/lib/demo-reports';
 import { AUDIT_PACKAGES, formatUsd } from '@/lib/packages';
@@ -45,12 +44,18 @@ export default function MarketingPage() {
           New workspaces include 1 free live audit; browse demos with no account.
         </p>
 
-        <div className="mt-10 max-w-3xl">
-          <QuickAuditBar />
-          <p className="mt-3 text-sm text-slate-500">
-            Works with website URLs and Google Play / App Store / Microsoft Store links.
-          </p>
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Button asChild size="lg">
+            <Link href="/sign-up">Start free — 1 live audit</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/demo">Browse sample reports</Link>
+          </Button>
         </div>
+        <p className="mt-4 text-sm text-slate-500">
+          After signup, paste a website or Play / App Store / Microsoft Store link from your
+          dashboard.
+        </p>
 
         <div className="mt-14 grid gap-4 sm:grid-cols-3">
           {[

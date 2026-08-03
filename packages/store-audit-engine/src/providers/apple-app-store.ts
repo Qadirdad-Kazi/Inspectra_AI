@@ -1,5 +1,5 @@
 import type { StoreListing, StoreProvider, StoreReview } from '../types/index.js';
-import { fetchJson } from './helpers.js';
+import { fetchJson, fetchText } from './helpers.js';
 
 type ItunesResult = {
   trackId: number;
@@ -15,6 +15,7 @@ type ItunesResult = {
   artworkUrl100?: string;
   screenshotUrls?: string[];
   ipadScreenshotUrls?: string[];
+  appletvScreenshotUrls?: string[];
   version?: string;
   currentVersionReleaseDate?: string;
   contentAdvisoryRating?: string;
@@ -51,6 +52,70 @@ async function lookup(params: Record<string, string>): Promise<ItunesResult> {
   return data.results[0]!;
 }
 
+/** Materialize Apple CDN thumb templates into a concrete JPEG URL. */
+export function materializeMzstaticUrl(raw: string): string | null {
+  let u = raw
+    .trim()
+    .replace(/\\u002F/g, '/')
+    .replace(/\\+/g, '')
+    .split(/\s+/)[0];
+  if (!u || !/mzstatic\.com/i.test(u)) return null;
+  if (!u.startsWith('http')) u = `https:${u}`;
+  if (u.includes('{w}x{h}')) {
+    u = u
+      .replace('{w}x{h}{c}.{f}', '600x1300bb.jpg')
+      .replace('{w}x{h}sr.{f}', '600x1300bb.jpg')
+      .replace('{w}x{h}bb.{f}', '600x1300bb.jpg')
+      .replace('{w}x{h}{c}', '600x1300bb')
+      .replace('{f}', 'jpg');
+  }
+  try {
+    return new URL(u).toString();
+  } catch {
+    return null;
+  }
+}
+
+function screenshotBaseKey(url: string): string {
+  // Drop trailing size variant so 157x340 and 600x1300 of same asset collapse
+  return url.replace(/\/\d+x\d+[^.\/]*\.(jpg|jpeg|webp|png)(\?.*)?$/i, '');
+}
+
+/**
+ * iTunes Lookup often returns empty screenshotUrls now.
+ * Fall back to scraping apps.apple.com HTML for PurpleSource / Display frames.
+ */
+export function extractAppleScreenshotUrls(html: string): string[] {
+  const candidates: string[] = [];
+  for (const m of html.matchAll(
+    /https:\/\/(?:is\d+-ssl\.)?mzstatic\.com\/image\/thumb\/[^"'\\\s<>]+/gi,
+  )) {
+    const url = materializeMzstaticUrl(m[0]);
+    if (!url) continue;
+    if (!/PurpleSource|App_Store_Image|Display_/i.test(url)) continue;
+    if (/Placeholder\.mill|Features\d+|\/\d+x\d+ia-/i.test(url)) continue;
+    candidates.push(url);
+  }
+
+  const best = new Map<string, string>();
+  for (const url of candidates) {
+    const key = screenshotBaseKey(url);
+    const prev = best.get(key);
+    // Prefer larger concrete sizes when present
+    const score = Number(url.match(/\/(\d+)x(\d+)/)?.[1] ?? 0);
+    const prevScore = Number(prev?.match(/\/(\d+)x(\d+)/)?.[1] ?? 0);
+    if (!prev || score >= prevScore) best.set(key, url);
+  }
+
+  return [...best.values()].slice(0, 12);
+}
+
+async function scrapeAppleScreenshots(trackId: string, country = 'us'): Promise<string[]> {
+  const url = `https://apps.apple.com/${country}/app/id${trackId}`;
+  const html = await fetchText(url);
+  return extractAppleScreenshotUrls(html);
+}
+
 export const appleAppStoreProvider: StoreProvider = {
   id: 'app_store',
   label: 'Apple App Store',
@@ -61,10 +126,18 @@ export const appleAppStoreProvider: StoreProvider = {
       ? await lookup({ bundleId: storeId.slice('bundle:'.length), country })
       : await lookup({ id: storeId, country });
 
-    const screens = [
+    let screens = [
       ...(result.screenshotUrls ?? []),
       ...(result.ipadScreenshotUrls ?? []),
-    ].slice(0, 12);
+    ].filter(Boolean);
+
+    if (screens.length === 0) {
+      try {
+        screens = await scrapeAppleScreenshots(String(result.trackId), country);
+      } catch {
+        screens = [];
+      }
+    }
 
     return {
       platform: 'app_store',
@@ -84,13 +157,16 @@ export const appleAppStoreProvider: StoreProvider = {
       price: result.formattedPrice,
       free: (result.price ?? 0) === 0,
       iconUrl: result.artworkUrl512 || result.artworkUrl100,
-      screenshotUrls: screens,
+      screenshotUrls: screens.slice(0, 12),
       languages: result.languageCodesISO2A,
       sizeText: result.fileSizeBytes
         ? `${(Number(result.fileSizeBytes) / (1024 * 1024)).toFixed(1)} MB`
         : undefined,
       websiteUrl: result.sellerUrl,
-      raw: { bundleId: result.bundleId },
+      raw: {
+        bundleId: result.bundleId,
+        screenshotSource: (result.screenshotUrls?.length ?? 0) > 0 ? 'itunes' : 'html-scrape',
+      },
     } satisfies StoreListing;
   },
 
@@ -101,9 +177,7 @@ export const appleAppStoreProvider: StoreProvider = {
 
     // RSS customer reviews feed
     try {
-      const xml = await (
-        await import('./helpers.js')
-      ).fetchText(
+      const xml = await fetchText(
         `https://itunes.apple.com/${country}/rss/customerreviews/id=${id}/sortBy=mostRecent/json`,
       );
       const data = JSON.parse(xml) as {
@@ -112,7 +186,6 @@ export const appleAppStoreProvider: StoreProvider = {
         };
       };
       const entries = data.feed?.entry ?? [];
-      // First entry can be the app itself in some feeds
       const reviews: StoreReview[] = [];
       for (const entry of entries) {
         const rating = Number(
