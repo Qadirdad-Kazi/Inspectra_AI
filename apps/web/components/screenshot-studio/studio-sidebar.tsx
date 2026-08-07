@@ -459,13 +459,15 @@ export function StudioSidebar({
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">ASSETS</span>
               <h3 className="text-lg font-bold text-white">Uploads</h3>
-              <p className="text-xs text-slate-400">Drop your raw app screenshots or images.</p>
+              <p className="text-xs text-slate-400">
+                Uploads fill the screen of the selected device mockup (all frames).
+              </p>
             </div>
 
             <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 p-6 text-center text-slate-300 hover:bg-white/10">
               <Upload className="h-6 w-6 text-teal-400" />
-              <span className="text-xs font-semibold">Upload Image File</span>
-              <span className="text-[10px] text-slate-500">PNG, JPG, WebP up to 10MB</span>
+              <span className="text-xs font-semibold">Upload into mockup screen</span>
+              <span className="text-[10px] text-slate-500">PNG, JPG, WebP · clipped to device glass</span>
               <input
                 type="file"
                 accept="image/*"

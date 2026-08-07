@@ -94,15 +94,68 @@ export const DEVICE_PRESETS: {
   id: DeviceStyle;
   label: string;
   overlay: string;
+  /** Alpha mask of the screen hole (white = show screenshot) */
+  screenMask?: string;
   kind: 'overlay' | 'css';
+  /** Display box aspect hint */
+  boxClass?: string;
 }[] = [
-  { id: 'iphone-17-a', label: 'iPhone · Upright', overlay: '/mockups/iphone-17-a.webp', kind: 'overlay' },
-  { id: 'iphone-17-b', label: 'iPhone · Front', overlay: '/mockups/iphone-17-b.webp', kind: 'overlay' },
-  { id: 'iphone-17-c', label: 'iPhone · Right', overlay: '/mockups/iphone-17-c.webp', kind: 'overlay' },
-  { id: 'iphone-17-d', label: 'iPhone · Left', overlay: '/mockups/iphone-17-d.webp', kind: 'overlay' },
-  { id: 'iphone-17-e', label: 'iPhone · Flat', overlay: '/mockups/iphone-17-e.webp', kind: 'overlay' },
-  { id: 'iphone-17-f', label: 'iPhone · Lean', overlay: '/mockups/iphone-17-f.webp', kind: 'overlay' },
-  { id: 'tilted-hand', label: 'Hand · Tilted', overlay: '/mockups/tilted-hand.webp', kind: 'overlay' },
+  {
+    id: 'iphone-17-a',
+    label: 'iPhone · Upright',
+    overlay: '/mockups/iphone-17-a.webp',
+    screenMask: '/mockups/masks/iphone-17-a.png',
+    kind: 'overlay',
+    boxClass: 'h-[380px] w-[185px]',
+  },
+  {
+    id: 'iphone-17-b',
+    label: 'iPhone · Front',
+    overlay: '/mockups/iphone-17-b.webp',
+    screenMask: '/mockups/masks/iphone-17-b.png',
+    kind: 'overlay',
+    boxClass: 'h-[380px] w-[183px]',
+  },
+  {
+    id: 'iphone-17-c',
+    label: 'iPhone · Right',
+    overlay: '/mockups/iphone-17-c.webp',
+    screenMask: '/mockups/masks/iphone-17-c.png',
+    kind: 'overlay',
+    boxClass: 'h-[300px] w-[330px]',
+  },
+  {
+    id: 'iphone-17-d',
+    label: 'iPhone · Left',
+    overlay: '/mockups/iphone-17-d.webp',
+    screenMask: '/mockups/masks/iphone-17-d.png',
+    kind: 'overlay',
+    boxClass: 'h-[290px] w-[340px]',
+  },
+  {
+    id: 'iphone-17-e',
+    label: 'iPhone · Flat',
+    overlay: '/mockups/iphone-17-e.webp',
+    screenMask: '/mockups/masks/iphone-17-e.png',
+    kind: 'overlay',
+    boxClass: 'h-[290px] w-[340px]',
+  },
+  {
+    id: 'iphone-17-f',
+    label: 'iPhone · Lean',
+    overlay: '/mockups/iphone-17-f.webp',
+    screenMask: '/mockups/masks/iphone-17-f.png',
+    kind: 'overlay',
+    boxClass: 'h-[300px] w-[300px]',
+  },
+  {
+    id: 'tilted-hand',
+    label: 'Hand · Tilted',
+    overlay: '/mockups/tilted-hand.webp',
+    screenMask: '/mockups/masks/tilted-hand.png',
+    kind: 'overlay',
+    boxClass: 'h-[300px] w-[355px]',
+  },
   { id: 'android-pixel', label: 'Android · Pixel', overlay: '', kind: 'css' },
   { id: 'android-slim', label: 'Android · Slim', overlay: '', kind: 'css' },
   { id: 'ipad-pro', label: 'iPad Pro', overlay: '', kind: 'css' },
@@ -124,36 +177,36 @@ export const INITIAL_SCREENS: ArtboardScreen[] = [
         id: 'el-badge',
         type: 'badge',
         x: 50,
-        y: 10,
+        y: 7,
         text: 'Store-ready frames',
         color: '#ffffff',
-        zIndex: 3,
+        zIndex: 5,
       },
       {
         id: 'el-headline',
         type: 'headline',
         x: 50,
-        y: 20,
+        y: 14,
         text: 'Ship visuals that convert.',
         color: '#ffffff',
-        fontSize: 26,
-        zIndex: 3,
+        fontSize: 22,
+        zIndex: 5,
       },
       {
         id: 'el-subhead',
         type: 'subhead',
         x: 50,
-        y: 30,
+        y: 22,
         text: 'Drag, align, and export polished App Store & Play screens.',
         color: '#94a3b8',
-        fontSize: 13,
-        zIndex: 3,
+        fontSize: 12,
+        zIndex: 5,
       },
       {
         id: 'el-device',
         type: 'device',
         x: 50,
-        y: 64,
+        y: 68,
         deviceStyle: 'iphone-17-b',
         shadowOpacity: 55,
         zIndex: 2,
@@ -222,12 +275,20 @@ export function StudioCanvas({
 }: StudioCanvasProps) {
   const [zoomLevel, setZoomLevel] = useState(88);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const artboardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const elementNodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragRef = useRef<{
     elId: string;
     screenId: string;
     pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    origX: number;
+    origY: number;
+    moved: boolean;
   } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const activeScreen = screens[activeScreenIndex] ?? screens[0] ?? INITIAL_SCREENS[0]!;
   const activeElement = activeScreen?.elements.find((el) => el.id === selectedElementId);
@@ -246,6 +307,74 @@ export function StudioCanvas({
     },
     [activeScreenIndex, setScreens],
   );
+
+  // Smooth drag: move DOM live, commit React state only on release (no artboard flicker)
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || e.pointerId !== drag.pointerId) return;
+      const board = artboardRefs.current[drag.screenId];
+      const node = elementNodeRefs.current[drag.elId];
+      if (!board || !node) return;
+
+      const rect = board.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+
+      const dx = e.clientX - drag.startClientX;
+      const dy = e.clientY - drag.startClientY;
+      if (!drag.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+        drag.moved = true;
+        setIsDragging(true);
+      }
+
+      const x = clamp(drag.origX + (dx / rect.width) * 100, 4, 96);
+      const y = clamp(drag.origY + (dy / rect.height) * 100, 4, 96);
+      node.style.left = `${x}%`;
+      node.style.top = `${y}%`;
+      node.dataset.dragX = String(x);
+      node.dataset.dragY = String(y);
+    };
+
+    const onUp = (e: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || e.pointerId !== drag.pointerId) return;
+
+      const node = elementNodeRefs.current[drag.elId];
+      if (drag.moved && node?.dataset.dragX && node?.dataset.dragY) {
+        const x = Number(node.dataset.dragX);
+        const y = Number(node.dataset.dragY);
+        setScreens((prev) => {
+          const screenIndex = prev.findIndex((s) => s.id === drag.screenId);
+          if (screenIndex < 0) return prev;
+          return prev.map((sc, sIdx) => {
+            if (sIdx !== screenIndex) return sc;
+            return {
+              ...sc,
+              elements: sc.elements.map((el) =>
+                el.id === drag.elId ? { ...el, x, y } : el,
+              ),
+            };
+          });
+        });
+        suppressClickRef.current = true;
+        window.setTimeout(() => {
+          suppressClickRef.current = false;
+        }, 0);
+      }
+
+      dragRef.current = null;
+      setIsDragging(false);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [setScreens]);
 
   const handleAddScreen = () => {
     const newIdx = screens.length + 1;
@@ -367,47 +496,29 @@ export function StudioCanvas({
     screenId: string,
     elId: string,
     screenIndex: number,
+    el: CanvasElement,
   ) => {
     if (editingTextId === elId) return;
+    if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     setActiveScreenIndex(screenIndex);
     setSelectedElementId(elId);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { elId, screenId, pointerId: e.pointerId };
-  };
-
-  const onPointerMoveElement = (e: ReactPointerEvent<HTMLDivElement>, screenId: string) => {
-    const drag = dragRef.current;
-    if (!drag || drag.elId !== selectedElementId || drag.screenId !== screenId) return;
-    if (e.pointerId !== drag.pointerId) return;
-
-    const board = artboardRefs.current[screenId];
-    if (!board) return;
-    const rect = board.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1) return;
-
-    const x = clamp(((e.clientX - rect.left) / rect.width) * 100, 4, 96);
-    const y = clamp(((e.clientY - rect.top) / rect.height) * 100, 4, 96);
-    const screenIndex = screens.findIndex((s) => s.id === screenId);
-    if (screenIndex < 0) return;
-    updateElement(drag.elId, { x, y }, screenIndex);
-  };
-
-  const onPointerUpElement = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (dragRef.current?.pointerId === e.pointerId) {
-      dragRef.current = null;
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        /* already released */
-      }
-    }
+    dragRef.current = {
+      elId,
+      screenId,
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      origX: el.x,
+      origY: el.y,
+      moved: false,
+    };
   };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!selectedElementId || editingTextId) return;
+      if (!selectedElementId || editingTextId || isDragging) return;
       const step = e.shiftKey ? 4 : 1;
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
@@ -425,6 +536,9 @@ export function StudioCanvas({
         e.preventDefault();
         const el = activeScreen.elements.find((x) => x.id === selectedElementId);
         if (el) updateElement(selectedElementId, { y: clamp(el.y + step, 4, 96) });
+      } else if (e.key === 'Escape') {
+        setSelectedElementId(null);
+        setEditingTextId(null);
       } else if (e.key === 'Delete' || e.key === 'Backspace') {
         if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') {
           return;
@@ -439,68 +553,79 @@ export function StudioCanvas({
 
   return (
     <div className="relative flex flex-col gap-4 select-none">
-      {activeElement ? (
-        <div className="sticky top-0 z-30 flex flex-wrap items-center justify-center gap-2 py-2">
-          <StudioFloatingToolbar
-            selected={activeElement}
-            onChangeDeviceStyle={(style) => updateElement(activeElement.id, { deviceStyle: style })}
-            onUploadScreenshot={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = () => {
-                const file = input.files?.[0];
-                if (!file) return;
-                const url = URL.createObjectURL(file);
-                updateElement(activeElement.id, { imageUrl: url });
-              };
-              input.click();
-            }}
-            shadowOpacity={activeElement.shadowOpacity ?? 55}
-            onChangeShadowOpacity={(opacity) =>
-              updateElement(activeElement.id, { shadowOpacity: opacity })
-            }
-            onChangeText={(text) => updateElement(activeElement.id, { text })}
-            onChangeFontSize={(fontSize) => updateElement(activeElement.id, { fontSize })}
-            onChangeColor={(color) => updateElement(activeElement.id, { color })}
-            onDuplicate={() => handleDuplicateElement(activeElement.id)}
-            onBringForward={() =>
-              updateElement(activeElement.id, {
-                zIndex: (activeElement.zIndex ?? 1) + 1,
-              })
-            }
-            onSendBackward={() =>
-              updateElement(activeElement.id, {
-                zIndex: Math.max(0, (activeElement.zIndex ?? 1) - 1),
-              })
-            }
-            onDelete={() => handleDeleteElement(activeElement.id)}
-          />
-          <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-slate-900/95 px-2 py-1.5 backdrop-blur-md">
-            <AlignBtn title="Align left" onClick={() => alignElement('left')}>
-              <AlignLeft className="h-3.5 w-3.5" />
-            </AlignBtn>
-            <AlignBtn title="Center horizontally" onClick={() => alignElement('center-x')}>
-              <AlignHorizontalJustifyCenter className="h-3.5 w-3.5" />
-            </AlignBtn>
-            <AlignBtn title="Align right" onClick={() => alignElement('right')}>
-              <AlignRight className="h-3.5 w-3.5" />
-            </AlignBtn>
-            <span className="mx-1 h-4 w-px bg-white/10" />
-            <AlignBtn title="Align top" onClick={() => alignElement('top')}>
-              <AlignVerticalJustifyCenter className="h-3.5 w-3.5 rotate-180" />
-            </AlignBtn>
-            <AlignBtn title="Center vertically" onClick={() => alignElement('center-y')}>
-              <AlignVerticalJustifyCenter className="h-3.5 w-3.5" />
-            </AlignBtn>
-            <AlignBtn title="Align bottom" onClick={() => alignElement('bottom')}>
-              <AlignVerticalJustifyCenter className="h-3.5 w-3.5" />
-            </AlignBtn>
+      {/* Fixed inspector — never pushes the artboard */}
+      {activeElement && !isDragging ? (
+        <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4">
+          <div className="pointer-events-auto flex max-w-[960px] flex-col items-center gap-2">
+            <StudioFloatingToolbar
+              selected={activeElement}
+              onChangeDeviceStyle={(style) => updateElement(activeElement.id, { deviceStyle: style })}
+              onUploadScreenshot={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = () => {
+                  const file = input.files?.[0];
+                  if (!file) return;
+                  const url = URL.createObjectURL(file);
+                  updateElement(activeElement.id, { imageUrl: url });
+                };
+                input.click();
+              }}
+              shadowOpacity={activeElement.shadowOpacity ?? 55}
+              onChangeShadowOpacity={(opacity) =>
+                updateElement(activeElement.id, { shadowOpacity: opacity })
+              }
+              onChangeText={(text) => updateElement(activeElement.id, { text })}
+              onChangeFontSize={(fontSize) => updateElement(activeElement.id, { fontSize })}
+              onChangeColor={(color) => updateElement(activeElement.id, { color })}
+              onDuplicate={() => handleDuplicateElement(activeElement.id)}
+              onBringForward={() =>
+                updateElement(activeElement.id, {
+                  zIndex: (activeElement.zIndex ?? 1) + 1,
+                })
+              }
+              onSendBackward={() =>
+                updateElement(activeElement.id, {
+                  zIndex: Math.max(0, (activeElement.zIndex ?? 1) - 1),
+                })
+              }
+              onDelete={() => handleDeleteElement(activeElement.id)}
+              onClose={() => {
+                setSelectedElementId(null);
+                setEditingTextId(null);
+              }}
+            />
+            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-slate-950/95 px-2 py-1 shadow-xl backdrop-blur-xl">
+              <AlignBtn title="Align left" onClick={() => alignElement('left')}>
+                <AlignLeft className="h-3.5 w-3.5" />
+              </AlignBtn>
+              <AlignBtn title="Center horizontally" onClick={() => alignElement('center-x')}>
+                <AlignHorizontalJustifyCenter className="h-3.5 w-3.5" />
+              </AlignBtn>
+              <AlignBtn title="Align right" onClick={() => alignElement('right')}>
+                <AlignRight className="h-3.5 w-3.5" />
+              </AlignBtn>
+              <span className="mx-1 h-4 w-px bg-white/10" />
+              <AlignBtn title="Align top" onClick={() => alignElement('top')}>
+                <AlignVerticalJustifyCenter className="h-3.5 w-3.5 rotate-180" />
+              </AlignBtn>
+              <AlignBtn title="Center vertically" onClick={() => alignElement('center-y')}>
+                <AlignVerticalJustifyCenter className="h-3.5 w-3.5" />
+              </AlignBtn>
+              <AlignBtn title="Align bottom" onClick={() => alignElement('bottom')}>
+                <AlignVerticalJustifyCenter className="h-3.5 w-3.5" />
+              </AlignBtn>
+            </div>
           </div>
         </div>
       ) : null}
 
-      <div className="relative flex items-start gap-8 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070b14] p-6 min-h-[680px]">
+      <div
+        className={`relative flex items-start gap-8 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#070b14] p-6 min-h-[680px] ${
+          isDragging ? 'cursor-grabbing' : ''
+        }`}
+      >
         {screens.map((screen, sIdx) => {
           const isActiveScreen = activeScreenIndex === sIdx;
           return (
@@ -537,11 +662,12 @@ export function StudioCanvas({
                   artboardRefs.current[screen.id] = node;
                 }}
                 onClick={() => {
+                  if (suppressClickRef.current || isDragging) return;
                   setActiveScreenIndex(sIdx);
                   setSelectedElementId(null);
                   setEditingTextId(null);
                 }}
-                className={`relative overflow-hidden rounded-[28px] border transition-shadow duration-200 ${
+                className={`relative overflow-hidden rounded-[28px] border ${
                   isActiveScreen
                     ? 'border-cyan-400/70 shadow-[0_0_0_4px_rgba(34,211,238,0.12)]'
                     : 'border-white/10 hover:border-white/25'
@@ -555,9 +681,8 @@ export function StudioCanvas({
                   transformOrigin: 'top center',
                 }}
               >
-                {/* subtle grid */}
                 <div
-                  className="pointer-events-none absolute inset-0 opacity-[0.07]"
+                  className="pointer-events-none absolute inset-0 opacity-[0.06]"
                   style={{
                     backgroundImage:
                       'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
@@ -570,21 +695,21 @@ export function StudioCanvas({
                   return (
                     <div
                       key={el.id}
-                      onPointerDown={(e) => onPointerDownElement(e, screen.id, el.id, sIdx)}
-                      onPointerMove={(e) => onPointerMoveElement(e, screen.id)}
-                      onPointerUp={onPointerUpElement}
-                      onPointerCancel={onPointerUpElement}
+                      ref={(node) => {
+                        elementNodeRefs.current[el.id] = node;
+                      }}
+                      onPointerDown={(e) => onPointerDownElement(e, screen.id, el.id, sIdx, el)}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         if (el.type === 'headline' || el.type === 'subhead' || el.type === 'badge') {
                           setEditingTextId(el.id);
                         }
                       }}
-                      className={`absolute touch-none ${
+                      className={`absolute touch-none will-change-[left,top] ${
                         isSelected
-                          ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-transparent'
+                          ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-transparent'
                           : ''
-                      } ${dragRef.current?.elId === el.id ? 'cursor-grabbing' : 'cursor-grab'}`}
+                      } ${isDragging && selectedElementId === el.id ? 'cursor-grabbing z-[60]' : 'cursor-grab'}`}
                       style={{
                         left: `${el.x}%`,
                         top: `${el.y}%`,
@@ -775,16 +900,34 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
   const shadow = `drop-shadow(0 22px 28px rgba(0,0,0,${(el.shadowOpacity ?? 55) / 100}))`;
 
   if (preset.kind === 'overlay' && preset.overlay) {
+    const maskUrl = preset.screenMask;
     return (
-      <div className="relative h-[380px] w-[280px] overflow-hidden">
-        <div className="absolute inset-x-8 top-10 bottom-6 z-0 overflow-hidden rounded-[26px] bg-slate-950">
-          <ScreenContent imageUrl={el.imageUrl} />
+      <div className={`relative overflow-hidden ${preset.boxClass || 'h-[360px] w-[240px]'}`}>
+        {/* Screenshot clipped to the real transparent screen hole of the mockup */}
+        <div
+          className="absolute inset-0 z-0"
+          style={
+            maskUrl
+              ? {
+                  WebkitMaskImage: `url(${maskUrl})`,
+                  maskImage: `url(${maskUrl})`,
+                  WebkitMaskSize: '100% 100%',
+                  maskSize: '100% 100%',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                }
+              : undefined
+          }
+        >
+          <ScreenContent imageUrl={el.imageUrl} fill />
         </div>
         <img
           src={preset.overlay}
           alt={preset.label}
           draggable={false}
-          className="pointer-events-none relative z-10 h-full w-full object-contain"
+          className="pointer-events-none relative z-10 h-full w-full"
           style={{ filter: shadow }}
         />
       </div>
@@ -800,7 +943,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
           <span className="h-2 w-2 rounded-full bg-green-500" />
         </div>
         <div className="flex-1 overflow-hidden bg-slate-950">
-          <ScreenContent imageUrl={el.imageUrl} label="Upload web screenshot" />
+          <ScreenContent imageUrl={el.imageUrl} label="Upload web screenshot" fill />
         </div>
       </div>
     );
@@ -813,7 +956,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
         style={{ filter: shadow }}
       >
         <div className="absolute inset-2 overflow-hidden rounded-[12px] bg-black">
-          <ScreenContent imageUrl={el.imageUrl} />
+          <ScreenContent imageUrl={el.imageUrl} fill />
         </div>
       </div>
     );
@@ -824,7 +967,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
       <div className="flex w-[320px] flex-col items-center" style={{ filter: shadow }}>
         <div className="w-full overflow-hidden rounded-t-lg border-[8px] border-b-0 border-zinc-700 bg-zinc-900">
           <div className="h-[190px] overflow-hidden bg-black">
-            <ScreenContent imageUrl={el.imageUrl} />
+            <ScreenContent imageUrl={el.imageUrl} fill />
           </div>
         </div>
         <div className="h-2 w-[340px] rounded-b-md bg-zinc-600" />
@@ -843,18 +986,37 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
     >
       <div className="absolute left-1/2 top-2 z-20 h-1.5 w-16 -translate-x-1/2 rounded-full bg-zinc-700" />
       <div className="absolute inset-[6px] overflow-hidden rounded-[20px] bg-black">
-        <ScreenContent imageUrl={el.imageUrl} />
+        <ScreenContent imageUrl={el.imageUrl} fill />
       </div>
     </div>
   );
 }
 
-function ScreenContent({ imageUrl, label }: { imageUrl?: string; label?: string }) {
+function ScreenContent({
+  imageUrl,
+  label,
+  fill,
+}: {
+  imageUrl?: string;
+  label?: string;
+  fill?: boolean;
+}) {
   if (imageUrl) {
-    return <img src={imageUrl} alt="" draggable={false} className="h-full w-full object-cover" />;
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        draggable={false}
+        className={fill ? 'h-full w-full object-cover object-top' : 'h-full w-full object-cover'}
+      />
+    );
   }
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 border-2 border-dashed border-cyan-500/30 bg-slate-900/90 p-4 text-center">
+    <div
+      className={`flex h-full w-full flex-col items-center justify-center gap-2 border-2 border-dashed border-cyan-500/30 bg-slate-900/90 p-4 text-center ${
+        fill ? 'min-h-full' : ''
+      }`}
+    >
       <ImageIcon className="h-7 w-7 text-cyan-400" />
       <span className="text-[11px] font-bold text-cyan-100">{label || 'Add screenshot'}</span>
       <span className="text-[9px] text-slate-500">Select device → Upload in toolbar</span>
