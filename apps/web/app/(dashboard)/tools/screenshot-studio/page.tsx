@@ -46,9 +46,11 @@ type AiSlide = {
   backgroundColor: string;
   gradientBackground?: string;
   textColor: string;
+  captionMutedColor?: string;
   badgeText?: string;
   imageUrl?: string;
   layout?: string;
+  role?: string;
   headlineY?: number;
   deviceY?: number;
   deviceX?: number;
@@ -59,6 +61,12 @@ type AiGenerateResult = {
   suggestedTheme: string;
   colorPalette: string[];
   generatedBy?: string;
+  auditSafe?: boolean;
+  creativePolicy?: {
+    frameCount: number;
+    minFrames: number;
+    targetQuality: number;
+  };
 };
 
 type StoredProject = {
@@ -106,7 +114,7 @@ function slidesToScreens(slides: AiSlide[], existing?: ArtboardScreen[]): Artboa
         x: 50,
         y: headY + 10,
         text: slide.subhead,
-        color: slide.textColor === '#0f172a' || slide.textColor === '#1c1917' ? '#57534e' : '#94a3b8',
+        color: slide.captionMutedColor || '#94a3b8',
         fontSize: 13,
         zIndex: 3,
       },
@@ -582,9 +590,11 @@ function ScreenshotStudioInner() {
       setSelectedElementId(null);
       setProjectName(params.appName || projectName);
       toast.success(
-        data.generatedBy === 'llm'
-          ? 'AI set applied — LLM copy + layouts'
-          : 'AI set applied — smart template layouts',
+        data.auditSafe
+          ? data.generatedBy === 'llm'
+            ? `Audit-safe set applied · ${data.slides.length} store frames (LLM copy)`
+            : `Audit-safe set applied · ${data.slides.length} store frames`
+          : 'AI layout applied',
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'AI generate failed');

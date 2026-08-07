@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Loader2, X, ImageIcon } from 'lucide-react';
+import { Sparkles, Loader2, X, ImageIcon, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface StudioAiPanelProps {
@@ -50,9 +50,9 @@ export function StudioAiPanel({
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-cyan-400" />
             <div>
-              <h3 className="text-lg font-bold">AI Copy & Layout</h3>
+              <h3 className="text-lg font-bold">AI Store Creative Generator</h3>
               <p className="text-xs text-slate-400">
-                Builds a 4-frame set with platform mockups + marketing copy
+                Builds audit-safe frames for App Store, Play, MS Store & web
               </p>
             </div>
           </div>
@@ -66,12 +66,20 @@ export function StudioAiPanel({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-100">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Tuned to Inspectra’s own screenshot audit: 6 professional frames, short high-contrast
+              copy, no clutter — designed to avoid “few screenshots” and “creative quality” findings.
+            </span>
+          </div>
+
           <div className="flex items-start gap-2 rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-3 py-2.5 text-xs text-cyan-100">
             <ImageIcon className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
               {screenshotCount > 0
-                ? `${screenshotCount} uploaded screenshot(s) will be placed into device frames.`
-                : 'Tip: upload screenshots into devices first — AI will place them into the generated set.'}
+                ? `${screenshotCount} uploaded screenshot(s) will be placed into device glass.`
+                : 'Tip: upload real app screenshots first — AI places them into premium store frames.'}
             </span>
           </div>
 
@@ -97,7 +105,7 @@ export function StudioAiPanel({
               rows={3}
               value={appDescription}
               onChange={(e) => setAppDescription(e.target.value)}
-              placeholder="Describe your app's core value, speed, security, sync..."
+              placeholder="Describe the core benefit users see in 2 seconds on the store page..."
               className="w-full rounded-xl border border-white/15 bg-white/5 p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />
           </div>
@@ -149,7 +157,7 @@ export function StudioAiPanel({
               disabled={loading}
               className="bg-cyan-400 font-semibold text-slate-950 hover:bg-cyan-300"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Generate Screenshot Set'}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Generate Audit-Safe Set'}
             </Button>
           </div>
         </form>

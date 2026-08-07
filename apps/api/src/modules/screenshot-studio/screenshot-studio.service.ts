@@ -10,7 +10,13 @@ import {
   UpdateScreenshotProjectDto,
   AiGenerateScreenshotsDto,
 } from './dto/studio.dto';
-import { generateScreenshotSetSpecs } from '@inspectra/ai-intelligence';
+import {
+  generateScreenshotSetSpecs,
+  STORE_CREATIVE_SYSTEM_PROMPT,
+  storeCreativeUserPrompt,
+  sanitizeStoreCopy,
+  STORE_CREATIVE_RULES,
+} from '@inspectra/ai-intelligence';
 import { chatCompletions, isLlmAvailable, safeParseJson } from '@inspectra/llm';
 
 type StudioMeta = {
@@ -172,9 +178,9 @@ export class ScreenshotStudioService {
       primaryColor: dto.primaryColor,
       auditFindingsSummary: dto.auditFindingsSummary,
       rawImageCount: dto.rawScreenshotUrls?.length || 0,
+      frameCount: STORE_CREATIVE_RULES.targetFrames,
     });
 
-    // Attach uploaded screenshot URLs into slide specs for the client
     const slidesWithImages = base.slides.map((slide) => {
       const idx = slide.rawImageIndex ?? 0;
       const imageUrl = dto.rawScreenshotUrls?.[idx] || dto.rawScreenshotUrls?.[0];
@@ -186,32 +192,34 @@ export class ScreenshotStudioService {
         ...base,
         slides: slidesWithImages,
         generatedBy: 'heuristic' as const,
+        auditSafe: true,
       };
     }
 
     try {
       const result = await chatCompletions({
-        temperature: 0.5,
+        temperature: 0.35,
         json: true,
-        timeoutMs: 45000,
+        timeoutMs: 60000,
         messages: [
           {
             role: 'system',
-            content:
-              'You write App Store / Play Store screenshot marketing copy. Return JSON {slides:[{headline,subhead,badgeText}]} with exactly 4 slides. Keep headlines under 8 words. Make copy conversion-oriented and specific to the app.',
+            content: STORE_CREATIVE_SYSTEM_PROMPT,
           },
           {
             role: 'user',
-            content: JSON.stringify({
+            content: storeCreativeUserPrompt({
               appName: dto.appName,
               appDescription: dto.appDescription,
-              theme: dto.theme,
               platform: dto.targetPlatform,
-              findings: dto.auditFindingsSummary?.slice(0, 4),
+              theme: dto.theme,
+              slideCount: slidesWithImages.length,
+              findings: dto.auditFindingsSummary,
               seedSlides: base.slides.map((s) => ({
                 headline: s.headline,
                 subhead: s.subhead,
                 badgeText: s.badgeText,
+                role: s.role,
               })),
             }),
           },
@@ -228,11 +236,16 @@ export class ScreenshotStudioService {
         const slides = slidesWithImages.map((slide, i) => {
           const llm = parsed.slides?.[i];
           if (!llm) return slide;
+          const clean = sanitizeStoreCopy({
+            headline: llm.headline,
+            subhead: llm.subhead,
+            badgeText: llm.badgeText,
+          });
           return {
             ...slide,
-            headline: llm.headline?.trim() || slide.headline,
-            subhead: llm.subhead?.trim() || slide.subhead,
-            badgeText: llm.badgeText?.trim() || slide.badgeText,
+            headline: clean.headline || slide.headline,
+            subhead: clean.subhead || slide.subhead,
+            badgeText: clean.badgeText || slide.badgeText,
           };
         });
         return {
@@ -240,6 +253,7 @@ export class ScreenshotStudioService {
           slides,
           generatedBy: 'llm' as const,
           model: result?.model,
+          auditSafe: true,
         };
       }
     } catch {
@@ -250,6 +264,7 @@ export class ScreenshotStudioService {
       ...base,
       slides: slidesWithImages,
       generatedBy: 'heuristic' as const,
+      auditSafe: true,
     };
   }
 }
