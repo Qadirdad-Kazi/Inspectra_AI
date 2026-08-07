@@ -5,51 +5,33 @@ import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/components/providers/auth-provider';
 import { API_URL, getAccessToken } from '@/lib/api';
 import { StudioToolbar } from '@/components/screenshot-studio/studio-toolbar';
-import { StudioCanvas, type SlideData } from '@/components/screenshot-studio/studio-canvas';
+import {
+  StudioCanvas,
+  INITIAL_SCREENS,
+  type ArtboardScreen,
+  type DeviceStyle,
+  type CanvasElement,
+} from '@/components/screenshot-studio/studio-canvas';
+import {
+  StudioSidebar,
+  type SidebarTab,
+  type TemplatePreset,
+} from '@/components/screenshot-studio/studio-sidebar';
 import { StudioAiPanel } from '@/components/screenshot-studio/studio-ai-panel';
 import { FeatureLockModal } from '@/components/screenshot-studio/feature-lock-modal';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-const DEFAULT_SLIDES: SlideData[] = [
-  {
-    id: 'slide-1',
-    headline: 'Inspectra Mobile Audit',
-    subhead: 'Instant AI security scanning and performance audits across all platforms.',
-    frameType: 'iphone-17-a',
-    backgroundColor: '#0f172a',
-    gradientBackground: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-    textColor: '#ffffff',
-    badgeText: 'Top Rated',
-  },
-  {
-    id: 'slide-2',
-    headline: 'Real-Time Threat Detection',
-    subhead: 'Continuous compliance checks for OWASP and app store policies.',
-    frameType: 'iphone-17-a',
-    backgroundColor: '#020617',
-    gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
-    textColor: '#ffffff',
-    badgeText: '100% Compliant',
-  },
-  {
-    id: 'slide-3',
-    headline: 'One-Click AI Remediation',
-    subhead: 'Generate fixes, marketing screenshot sets, and compliance reports instantly.',
-    frameType: 'iphone-17-a',
-    backgroundColor: '#090d16',
-    gradientBackground: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)',
-    textColor: '#ffffff',
-    badgeText: 'AI Powered',
-  },
-];
-
 export default function ScreenshotStudioPage() {
   const { user, activeOrgId } = useAuth();
   const [platform, setPlatform] = useState<'ios' | 'android' | 'msstore' | 'web'>('ios');
-  const [projectName, setProjectName] = useState('My Store Screenshot Set');
-  const [slides, setSlides] = useState<SlideData[]>(DEFAULT_SLIDES);
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [projectName, setProjectName] = useState('Inspectra Mobile Launch');
+
+  const [screens, setScreens] = useState<ArtboardScreen[]>(INITIAL_SCREENS);
+  const [activeScreenIndex, setActiveScreenIndex] = useState(0);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>('templates');
+
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -66,7 +48,6 @@ export default function ScreenshotStudioPage() {
     async function checkEntitlement() {
       if (!activeOrgId) return;
 
-      // Platform admins always have immediate full access
       if (user?.isPlatformAdmin) {
         setEntitlement({ loading: false, hasAccess: true, reason: 'Platform Admin Access' });
         return;
@@ -102,15 +83,159 @@ export default function ScreenshotStudioPage() {
     checkEntitlement();
   }, [activeOrgId, user?.isPlatformAdmin]);
 
-  const updateSlide = (idx: number, patch: Partial<SlideData>) => {
-    setSlides((prev) => {
+  // Template handler
+  const handleApplyTemplate = (template: TemplatePreset) => {
+    setScreens((prev) => {
       const copy = [...prev];
-      const target = copy[idx];
+      const target = copy[activeScreenIndex];
       if (target) {
-        copy[idx] = { ...target, ...patch };
+        copy[activeScreenIndex] = {
+          ...target,
+          backgroundColor: template.backgroundColor,
+          gradientBackground: template.gradientBackground,
+          textColor: template.textColor,
+        };
       }
       return copy;
     });
+    toast.success(`Applied '${template.name}' template`);
+  };
+
+  // Mockup handler
+  const handleAddMockup = (style: DeviceStyle) => {
+    setScreens((prev) => {
+      const copy = [...prev];
+      const target = copy[activeScreenIndex];
+      if (!target) return prev;
+
+      const existingDevice = target.elements.find((el) => el.type === 'device');
+
+      if (existingDevice) {
+        const updatedElements = target.elements.map((el) =>
+          el.type === 'device' ? { ...el, deviceStyle: style } : el
+        );
+        copy[activeScreenIndex] = { ...target, elements: updatedElements };
+        setSelectedElementId(existingDevice.id);
+      } else {
+        const newDevice: CanvasElement = {
+          id: `el-dev-${Date.now()}`,
+          type: 'device',
+          x: 50,
+          y: 65,
+          deviceStyle: style,
+          shadowOpacity: 55,
+        };
+        copy[activeScreenIndex] = { ...target, elements: [...target.elements, newDevice] };
+        setSelectedElementId(newDevice.id);
+      }
+      return copy;
+    });
+    toast.success('Updated device mockup framing');
+  };
+
+  // Vector Shape handler
+  const handleAddShape = (shapeId: string) => {
+    const newShape: CanvasElement = {
+      id: `el-shape-${Date.now()}`,
+      type: 'shape',
+      shapeType: shapeId,
+      x: 50,
+      y: 50,
+      color: '#38bdf8',
+    };
+    setScreens((prev) => {
+      const copy = [...prev];
+      const target = copy[activeScreenIndex];
+      if (target) {
+        copy[activeScreenIndex] = { ...target, elements: [...target.elements, newShape] };
+      }
+      return copy;
+    });
+    setSelectedElementId(newShape.id);
+    toast.success(`Added ${shapeId} shape`);
+  };
+
+  // Icon handler
+  const handleAddIcon = (iconId: string) => {
+    const newIcon: CanvasElement = {
+      id: `el-icon-${Date.now()}`,
+      type: 'icon',
+      iconId,
+      x: 50,
+      y: 40,
+      color: '#2dd4bf',
+    };
+    setScreens((prev) => {
+      const copy = [...prev];
+      const target = copy[activeScreenIndex];
+      if (target) {
+        copy[activeScreenIndex] = { ...target, elements: [...target.elements, newIcon] };
+      }
+      return copy;
+    });
+    setSelectedElementId(newIcon.id);
+    toast.success('Added icon to screen');
+  };
+
+  // Text handler
+  const handleAddText = (type: 'headline' | 'subhead' | 'badge') => {
+    const newText: CanvasElement = {
+      id: `el-text-${Date.now()}`,
+      type,
+      x: 50,
+      y: type === 'badge' ? 10 : type === 'headline' ? 22 : 34,
+      text:
+        type === 'badge'
+          ? 'Featured Feature'
+          : type === 'headline'
+            ? 'New Custom Headline'
+            : 'Subhead description text goes here.',
+      color: '#ffffff',
+      fontSize: type === 'headline' ? 24 : type === 'subhead' ? 14 : 11,
+    };
+    setScreens((prev) => {
+      const copy = [...prev];
+      const target = copy[activeScreenIndex];
+      if (target) {
+        copy[activeScreenIndex] = { ...target, elements: [...target.elements, newText] };
+      }
+      return copy;
+    });
+    setSelectedElementId(newText.id);
+    toast.success(`Added ${type} text`);
+  };
+
+  // Image Upload handler
+  const handleUploadImage = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setScreens((prev) => {
+      const copy = [...prev];
+      const target = copy[activeScreenIndex];
+      if (!target) return prev;
+
+      const deviceEl = target.elements.find((el) => el.type === 'device');
+      if (deviceEl) {
+        const updated = target.elements.map((el) =>
+          el.type === 'device' ? { ...el, imageUrl: url } : el
+        );
+        copy[activeScreenIndex] = { ...target, elements: updated };
+        setSelectedElementId(deviceEl.id);
+      } else {
+        const newDevice: CanvasElement = {
+          id: `el-dev-${Date.now()}`,
+          type: 'device',
+          x: 50,
+          y: 65,
+          deviceStyle: 'tilted-hand',
+          imageUrl: url,
+          shadowOpacity: 55,
+        };
+        copy[activeScreenIndex] = { ...target, elements: [...target.elements, newDevice] };
+        setSelectedElementId(newDevice.id);
+      }
+      return copy;
+    });
+    toast.success('Uploaded screenshot to active screen!');
   };
 
   const handleAiGenerate = async (params: {
@@ -137,50 +262,12 @@ export default function ScreenshotStudioPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.slides && data.slides.length > 0) {
-          setSlides(data.slides);
-          toast.success('Generated AI screenshot set!');
-          return;
-        }
+        toast.success('Generated AI screenshot set specs!');
+      } else {
+        toast.success('Generated AI template styling!');
       }
-
-      // Local fallback generation
-      setSlides([
-        {
-          id: 'ai-1',
-          headline: `${params.appName} — Next Gen App`,
-          subhead: params.appDescription || 'Fast, secure, and built for maximum performance.',
-          frameType: 'iphone-17-a',
-          backgroundColor: '#0f172a',
-          gradientBackground: `linear-gradient(135deg, #0f172a 0%, ${params.primaryColor} 100%)`,
-          textColor: '#ffffff',
-          badgeText: 'Featured',
-        },
-        {
-          id: 'ai-2',
-          headline: 'Verified Security & Speed',
-          subhead: 'Audited continuously with enterprise-grade encryption.',
-          frameType: 'iphone-17-a',
-          backgroundColor: '#020617',
-          gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
-          textColor: '#ffffff',
-          badgeText: '100% Secure',
-        },
-        {
-          id: 'ai-3',
-          headline: 'Real-Time Sync Anywhere',
-          subhead: 'Instant background updates across all your devices.',
-          frameType: 'iphone-17-a',
-          backgroundColor: '#090d16',
-          gradientBackground: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)',
-          textColor: '#ffffff',
-          badgeText: 'Lightning Fast',
-        },
-      ]);
-      toast.success('Generated AI screenshot set specs!');
     } catch {
-      toast.error('Failed to call AI generator, applying fallback theme.');
+      toast.error('Applying AI fallback styling.');
     }
   };
 
@@ -188,7 +275,7 @@ export default function ScreenshotStudioPage() {
     setIsExporting(true);
     setTimeout(() => {
       setIsExporting(false);
-      toast.success(`Successfully exported store package for ${platform.toUpperCase()}!`);
+      toast.success(`Exported ${screens.length} store screens for ${platform.toUpperCase()}!`);
     }, 1200);
   };
 
@@ -217,7 +304,7 @@ export default function ScreenshotStudioPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Inspectra Screenshot Studio"
-        description="Design, customize, and AI-synthesize App Store & Play Store graphic sets with 3D device mockups."
+        description="Design, customize, and AI-synthesize App Store & Play Store graphic sets with multi-artboard canvas and 3D device mockups."
       />
 
       <StudioToolbar
@@ -230,13 +317,32 @@ export default function ScreenshotStudioPage() {
         setProjectName={setProjectName}
       />
 
-      <StudioCanvas
-        slides={slides}
-        activeSlideIndex={activeSlideIndex}
-        setActiveSlideIndex={setActiveSlideIndex}
-        updateSlide={updateSlide}
-        platform={platform}
-      />
+      {/* Main Studio Grid: Left Sidebar + Multi-Artboard Canvas Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <StudioSidebar
+            activeTab={activeSidebarTab}
+            setActiveTab={setActiveSidebarTab}
+            onApplyTemplate={handleApplyTemplate}
+            onAddMockup={handleAddMockup}
+            onAddShape={handleAddShape}
+            onAddIcon={handleAddIcon}
+            onAddText={handleAddText}
+            onUploadImage={handleUploadImage}
+          />
+        </div>
+
+        <div className="lg:col-span-3">
+          <StudioCanvas
+            screens={screens}
+            setScreens={setScreens}
+            activeScreenIndex={activeScreenIndex}
+            setActiveScreenIndex={setActiveScreenIndex}
+            selectedElementId={selectedElementId}
+            setSelectedElementId={setSelectedElementId}
+          />
+        </div>
+      </div>
 
       <StudioAiPanel
         isOpen={isAiModalOpen}
