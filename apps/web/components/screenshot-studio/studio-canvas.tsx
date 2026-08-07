@@ -289,6 +289,8 @@ interface StudioCanvasProps {
   selectedElementId: string | null;
   setSelectedElementId: (id: string | null) => void;
   platform?: 'ios' | 'android' | 'msstore' | 'web';
+  /** Hide editor chrome for clean store exports */
+  cleanExport?: boolean;
 }
 
 export function StudioCanvas({
@@ -298,6 +300,8 @@ export function StudioCanvas({
   setActiveScreenIndex,
   selectedElementId,
   setSelectedElementId,
+  platform: _platform,
+  cleanExport = false,
 }: StudioCanvasProps) {
   const [zoomLevel, setZoomLevel] = useState(88);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
@@ -577,10 +581,12 @@ export function StudioCanvas({
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  const renderZoom = cleanExport ? 100 : zoomLevel;
+
   return (
     <div className="relative flex flex-col gap-4 select-none">
       {/* Fixed inspector — never pushes the artboard */}
-      {activeElement && !isDragging ? (
+      {activeElement && !isDragging && !cleanExport ? (
         <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4">
           <div className="pointer-events-auto flex max-w-[960px] flex-col items-center gap-2">
             <StudioFloatingToolbar
@@ -590,10 +596,11 @@ export function StudioCanvas({
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*';
-                input.onchange = () => {
+                input.onchange = async () => {
                   const file = input.files?.[0];
                   if (!file) return;
-                  const url = URL.createObjectURL(file);
+                  const { fileToDataUrl } = await import('@/lib/studio-export');
+                  const url = await fileToDataUrl(file);
                   updateElement(activeElement.id, { imageUrl: url });
                 };
                 input.click();
@@ -656,31 +663,33 @@ export function StudioCanvas({
           const isActiveScreen = activeScreenIndex === sIdx;
           return (
             <div key={screen.id} className="flex shrink-0 flex-col items-center gap-3">
-              <div className="flex w-[360px] items-center justify-between px-1 text-xs text-slate-400">
-                <button
-                  type="button"
-                  onClick={() => setActiveScreenIndex(sIdx)}
-                  className={`font-semibold tracking-wide ${isActiveScreen ? 'text-white' : 'text-slate-400'}`}
-                >
-                  {screen.name}
-                </button>
-                <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-slate-950/80 p-1">
-                  <IconBtn onClick={() => handleMoveScreen(sIdx, 'left')} title="Move left">
-                    <ArrowLeft className="h-3 w-3" />
-                  </IconBtn>
-                  <IconBtn onClick={() => handleMoveScreen(sIdx, 'right')} title="Move right">
-                    <ArrowRight className="h-3 w-3" />
-                  </IconBtn>
-                  <IconBtn onClick={() => handleDuplicateScreen(sIdx)} title="Duplicate">
-                    <Copy className="h-3 w-3" />
-                  </IconBtn>
-                  {screens.length > 1 ? (
-                    <IconBtn onClick={() => handleDeleteScreen(sIdx)} title="Delete" danger>
-                      <Trash2 className="h-3 w-3" />
+              {!cleanExport ? (
+                <div className="flex w-[360px] items-center justify-between px-1 text-xs text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => setActiveScreenIndex(sIdx)}
+                    className={`font-semibold tracking-wide ${isActiveScreen ? 'text-white' : 'text-slate-400'}`}
+                  >
+                    {screen.name}
+                  </button>
+                  <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-slate-950/80 p-1">
+                    <IconBtn onClick={() => handleMoveScreen(sIdx, 'left')} title="Move left">
+                      <ArrowLeft className="h-3 w-3" />
                     </IconBtn>
-                  ) : null}
+                    <IconBtn onClick={() => handleMoveScreen(sIdx, 'right')} title="Move right">
+                      <ArrowRight className="h-3 w-3" />
+                    </IconBtn>
+                    <IconBtn onClick={() => handleDuplicateScreen(sIdx)} title="Duplicate">
+                      <Copy className="h-3 w-3" />
+                    </IconBtn>
+                    {screens.length > 1 ? (
+                      <IconBtn onClick={() => handleDeleteScreen(sIdx)} title="Delete" danger>
+                        <Trash2 className="h-3 w-3" />
+                      </IconBtn>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               <div
                 data-artboard-id={screen.id}
@@ -693,39 +702,49 @@ export function StudioCanvas({
                   setSelectedElementId(null);
                   setEditingTextId(null);
                 }}
-                className={`relative overflow-hidden rounded-[28px] border ${
-                  isActiveScreen
-                    ? 'border-cyan-400/70 shadow-[0_0_0_4px_rgba(34,211,238,0.12)]'
-                    : 'border-white/10 hover:border-white/25'
+                className={`relative overflow-hidden ${
+                  cleanExport
+                    ? 'rounded-none border-0 shadow-none'
+                    : `rounded-[28px] border ${
+                        isActiveScreen
+                          ? 'border-cyan-400/70 shadow-[0_0_0_4px_rgba(34,211,238,0.12)]'
+                          : 'border-white/10 hover:border-white/25'
+                      }`
                 }`}
                 style={{
                   width: 360,
                   height: 680,
                   background: screen.gradientBackground || screen.backgroundColor,
                   color: screen.textColor,
-                  transform: `scale(${zoomLevel / 100})`,
+                  transform: `scale(${renderZoom / 100})`,
                   transformOrigin: 'top center',
                 }}
               >
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-[0.06]"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
-                    backgroundSize: '24px 24px',
-                  }}
-                />
+                {!cleanExport ? (
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-[0.06]"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)',
+                      backgroundSize: '24px 24px',
+                    }}
+                  />
+                ) : null}
 
                 {screen.elements.map((el) => {
-                  const isSelected = selectedElementId === el.id && isActiveScreen;
+                  const isSelected = !cleanExport && selectedElementId === el.id && isActiveScreen;
                   return (
                     <div
                       key={el.id}
                       ref={(node) => {
                         elementNodeRefs.current[el.id] = node;
                       }}
-                      onPointerDown={(e) => onPointerDownElement(e, screen.id, el.id, sIdx, el)}
+                      onPointerDown={(e) => {
+                        if (cleanExport) return;
+                        onPointerDownElement(e, screen.id, el.id, sIdx, el);
+                      }}
                       onDoubleClick={(e) => {
+                        if (cleanExport) return;
                         e.stopPropagation();
                         if (el.type === 'headline' || el.type === 'subhead' || el.type === 'badge') {
                           setEditingTextId(el.id);
@@ -735,7 +754,13 @@ export function StudioCanvas({
                         isSelected
                           ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-transparent'
                           : ''
-                      } ${isDragging && selectedElementId === el.id ? 'cursor-grabbing z-[60]' : 'cursor-grab'}`}
+                      } ${
+                        cleanExport
+                          ? ''
+                          : isDragging && selectedElementId === el.id
+                            ? 'cursor-grabbing z-[60]'
+                            : 'cursor-grab'
+                      }`}
                       style={{
                         left: `${el.x}%`,
                         top: `${el.y}%`,
@@ -757,43 +782,49 @@ export function StudioCanvas({
                 })}
               </div>
 
-              <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                {screen.widthPx || 1290} × {screen.heightPx || 2796} px
-              </div>
+              {!cleanExport ? (
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                  {screen.widthPx || 1290} × {screen.heightPx || 2796} px
+                </div>
+              ) : null}
             </div>
           );
         })}
 
-        <button
-          type="button"
-          onClick={handleAddScreen}
-          className="mt-8 flex h-[680px] w-[360px] shrink-0 flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-white/15 bg-slate-950/40 text-slate-300 transition hover:border-cyan-400/50 hover:bg-slate-900/50 hover:text-white"
-        >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
-            <Plus className="h-7 w-7" />
-          </div>
-          <span className="text-sm font-semibold">Add screen</span>
-          <span className="text-xs text-slate-500">New blank artboard</span>
-        </button>
+        {!cleanExport ? (
+          <button
+            type="button"
+            onClick={handleAddScreen}
+            className="mt-8 flex h-[680px] w-[360px] shrink-0 flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-white/15 bg-slate-950/40 text-slate-300 transition hover:border-cyan-400/50 hover:bg-slate-900/50 hover:text-white"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
+              <Plus className="h-7 w-7" />
+            </div>
+            <span className="text-sm font-semibold">Add screen</span>
+            <span className="text-xs text-slate-500">New blank artboard</span>
+          </button>
+        ) : null}
       </div>
 
-      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/90 px-3 py-1.5 text-xs text-white backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
-          className="rounded p-1 text-slate-400 hover:text-white"
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        <span className="w-12 text-center font-mono text-xs font-bold text-cyan-300">{zoomLevel}%</span>
-        <button
-          type="button"
-          onClick={() => setZoomLevel((z) => Math.min(140, z + 10))}
-          className="rounded p-1 text-slate-400 hover:text-white"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {!cleanExport ? (
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/90 px-3 py-1.5 text-xs text-white backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
+            className="rounded p-1 text-slate-400 hover:text-white"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <span className="w-12 text-center font-mono text-xs font-bold text-cyan-300">{zoomLevel}%</span>
+          <button
+            type="button"
+            onClick={() => setZoomLevel((z) => Math.min(140, z + 10))}
+            className="rounded p-1 text-slate-400 hover:text-white"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

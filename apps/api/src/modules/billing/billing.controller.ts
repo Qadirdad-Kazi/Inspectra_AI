@@ -52,7 +52,7 @@ export class BillingController {
 
   @ApiBearerAuth()
   @Post('organizations/:organizationId/billing/studio/checkout')
-  @Roles('admin')
+  @Roles('viewer')
   @ApiOperation({ summary: 'Buy Inspectra Studio access (weekly / monthly / custom days)' })
   purchaseStudio(
     @Param('organizationId') organizationId: string,

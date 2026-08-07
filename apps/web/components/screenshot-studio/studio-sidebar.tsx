@@ -59,6 +59,15 @@ export interface TemplatePreset {
   gradientBackground: string;
   textColor: string;
   previewClass: string;
+  badgeText?: string;
+  headline?: string;
+  subhead?: string;
+  deviceStyle?: DeviceStyle;
+  headlineY?: number;
+  subheadY?: number;
+  badgeY?: number;
+  deviceX?: number;
+  deviceY?: number;
 }
 
 export const TEMPLATE_PRESETS: TemplatePreset[] = [
@@ -70,6 +79,15 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
     gradientBackground: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
     textColor: '#ffffff',
     previewClass: 'from-slate-900 to-indigo-950',
+    badgeText: 'Featured',
+    headline: 'Ship with confidence',
+    subhead: 'Store-ready frames that convert browsers into installs.',
+    deviceStyle: 'iphone-17-b',
+    badgeY: 10,
+    headlineY: 20,
+    subheadY: 30,
+    deviceX: 50,
+    deviceY: 64,
   },
   {
     id: 'editorial-calm',
@@ -79,6 +97,15 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
     gradientBackground: 'linear-gradient(135deg, #f5f5f4 0%, #e7e5e4 100%)',
     textColor: '#1c1917',
     previewClass: 'from-stone-100 to-stone-200 text-stone-900',
+    badgeText: 'Premium',
+    headline: 'Clarity, elevated',
+    subhead: 'Quiet design. Loud results.',
+    deviceStyle: 'iphone-17-a',
+    badgeY: 12,
+    headlineY: 22,
+    subheadY: 32,
+    deviceX: 50,
+    deviceY: 66,
   },
   {
     id: 'electric-launch',
@@ -88,6 +115,15 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
     gradientBackground: 'linear-gradient(135deg, #a3e635 0%, #84cc16 100%)',
     textColor: '#0f172a',
     previewClass: 'from-lime-400 to-lime-500 text-slate-950',
+    badgeText: 'Launch',
+    headline: 'Go live today',
+    subhead: 'High-energy frames for launch week.',
+    deviceStyle: 'iphone-17-c',
+    badgeY: 10,
+    headlineY: 18,
+    subheadY: 28,
+    deviceX: 58,
+    deviceY: 62,
   },
   {
     id: 'ocean-glass',
@@ -97,6 +133,15 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
     gradientBackground: 'linear-gradient(160deg, #082f49 0%, #0e7490 100%)',
     textColor: '#ffffff',
     previewClass: 'from-sky-950 to-cyan-700',
+    badgeText: 'SaaS',
+    headline: 'Built for teams',
+    subhead: 'Cool glass aesthetics with product focus.',
+    deviceStyle: 'iphone-17-d',
+    badgeY: 10,
+    headlineY: 18,
+    subheadY: 28,
+    deviceX: 42,
+    deviceY: 62,
   },
   {
     id: 'noir-gold',
@@ -106,6 +151,15 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
     gradientBackground: 'linear-gradient(160deg, #09090b 0%, #422006 100%)',
     textColor: '#fef3c7',
     previewClass: 'from-zinc-950 to-amber-950 text-amber-100',
+    badgeText: 'Luxury',
+    headline: 'Crafted to convert',
+    subhead: 'Dark luxury frames with gold accents.',
+    deviceStyle: 'tilted-hand',
+    badgeY: 12,
+    headlineY: 22,
+    subheadY: 32,
+    deviceX: 50,
+    deviceY: 64,
   },
 ];
 

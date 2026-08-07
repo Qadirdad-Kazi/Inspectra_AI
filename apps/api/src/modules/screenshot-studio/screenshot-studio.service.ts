@@ -84,11 +84,16 @@ export class ScreenshotStudioService {
     };
   }
 
-  async createProject(userId: string, orgId: string, dto: CreateScreenshotProjectDto) {
+  private async assertStudioAccess(userId: string, orgId: string) {
     const entitlement = await this.checkEntitlement(userId, orgId);
     if (!entitlement.hasAccess) {
       throw new ForbiddenException(entitlement.reason);
     }
+    return entitlement;
+  }
+
+  async createProject(userId: string, orgId: string, dto: CreateScreenshotProjectDto) {
+    await this.assertStudioAccess(userId, orgId);
 
     return this.prisma.screenshotStudioProject.create({
       data: {
@@ -103,17 +108,19 @@ export class ScreenshotStudioService {
     });
   }
 
-  async listProjects(orgId: string) {
+  async listProjects(userId: string, orgId: string) {
+    await this.assertStudioAccess(userId, orgId);
     return this.prisma.screenshotStudioProject.findMany({
       where: { organizationId: orgId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
       },
     });
   }
 
-  async getProject(orgId: string, projectId: string) {
+  async getProject(userId: string, orgId: string, projectId: string) {
+    await this.assertStudioAccess(userId, orgId);
     const project = await this.prisma.screenshotStudioProject.findFirst({
       where: { id: projectId, organizationId: orgId },
       include: {
@@ -126,8 +133,13 @@ export class ScreenshotStudioService {
     return project;
   }
 
-  async updateProject(orgId: string, projectId: string, dto: UpdateScreenshotProjectDto) {
-    await this.getProject(orgId, projectId);
+  async updateProject(
+    userId: string,
+    orgId: string,
+    projectId: string,
+    dto: UpdateScreenshotProjectDto,
+  ) {
+    await this.getProject(userId, orgId, projectId);
     return this.prisma.screenshotStudioProject.update({
       where: { id: projectId },
       data: {
@@ -143,13 +155,15 @@ export class ScreenshotStudioService {
     });
   }
 
-  async deleteProject(orgId: string, projectId: string) {
-    await this.getProject(orgId, projectId);
+  async deleteProject(userId: string, orgId: string, projectId: string) {
+    await this.getProject(userId, orgId, projectId);
     await this.prisma.screenshotStudioProject.delete({ where: { id: projectId } });
     return { success: true };
   }
 
-  async generateAiScreenshots(dto: AiGenerateScreenshotsDto) {
+  async generateAiScreenshots(userId: string, orgId: string, dto: AiGenerateScreenshotsDto) {
+    await this.assertStudioAccess(userId, orgId);
+
     const base = generateScreenshotSetSpecs({
       appName: dto.appName,
       appDescription: dto.appDescription,
@@ -160,8 +174,19 @@ export class ScreenshotStudioService {
       rawImageCount: dto.rawScreenshotUrls?.length || 0,
     });
 
+    // Attach uploaded screenshot URLs into slide specs for the client
+    const slidesWithImages = base.slides.map((slide) => {
+      const idx = slide.rawImageIndex ?? 0;
+      const imageUrl = dto.rawScreenshotUrls?.[idx] || dto.rawScreenshotUrls?.[0];
+      return imageUrl ? { ...slide, imageUrl } : slide;
+    });
+
     if (!isLlmAvailable()) {
-      return { ...base, generatedBy: 'heuristic' as const };
+      return {
+        ...base,
+        slides: slidesWithImages,
+        generatedBy: 'heuristic' as const,
+      };
     }
 
     try {
@@ -173,7 +198,7 @@ export class ScreenshotStudioService {
           {
             role: 'system',
             content:
-              'You write App Store / Play Store screenshot marketing copy. Return JSON {slides:[{headline,subhead,badgeText}]} with exactly 4 slides. No fix suggestions — copy only. Keep headlines under 8 words.',
+              'You write App Store / Play Store screenshot marketing copy. Return JSON {slides:[{headline,subhead,badgeText}]} with exactly 4 slides. Keep headlines under 8 words. Make copy conversion-oriented and specific to the app.',
           },
           {
             role: 'user',
@@ -181,10 +206,12 @@ export class ScreenshotStudioService {
               appName: dto.appName,
               appDescription: dto.appDescription,
               theme: dto.theme,
+              platform: dto.targetPlatform,
               findings: dto.auditFindingsSummary?.slice(0, 4),
               seedSlides: base.slides.map((s) => ({
                 headline: s.headline,
                 subhead: s.subhead,
+                badgeText: s.badgeText,
               })),
             }),
           },
@@ -198,7 +225,7 @@ export class ScreenshotStudioService {
         : null;
 
       if (parsed?.slides?.length) {
-        const slides = base.slides.map((slide, i) => {
+        const slides = slidesWithImages.map((slide, i) => {
           const llm = parsed.slides?.[i];
           if (!llm) return slide;
           return {
@@ -219,6 +246,10 @@ export class ScreenshotStudioService {
       /* fall through to heuristic */
     }
 
-    return { ...base, generatedBy: 'heuristic' as const };
+    return {
+      ...base,
+      slides: slidesWithImages,
+      generatedBy: 'heuristic' as const,
+    };
   }
 }

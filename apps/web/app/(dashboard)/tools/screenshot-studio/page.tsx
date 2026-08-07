@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toPng } from 'html-to-image';
 import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -20,7 +21,20 @@ import {
 } from '@/components/screenshot-studio/studio-sidebar';
 import { StudioAiPanel } from '@/components/screenshot-studio/studio-ai-panel';
 import { FeatureLockModal } from '@/components/screenshot-studio/feature-lock-modal';
-import { Loader2, Save } from 'lucide-react';
+import {
+  StudioProjectLibrary,
+  type StudioProjectListItem,
+} from '@/components/screenshot-studio/studio-project-library';
+import { useHistoryState } from '@/components/screenshot-studio/use-history-state';
+import {
+  PLATFORM_EXPORT_SIZE,
+  PREVIEW_ARTBOARD,
+  fileToDataUrl,
+  persistableScreens,
+  slugify,
+  type StudioPlatform,
+} from '@/lib/studio-export';
+import { Loader2, Redo2, Save, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
@@ -33,6 +47,11 @@ type AiSlide = {
   gradientBackground?: string;
   textColor: string;
   badgeText?: string;
+  imageUrl?: string;
+  layout?: string;
+  headlineY?: number;
+  deviceY?: number;
+  deviceX?: number;
 };
 
 type AiGenerateResult = {
@@ -42,16 +61,31 @@ type AiGenerateResult = {
   generatedBy?: string;
 };
 
+type StoredProject = {
+  id: string;
+  name: string;
+  platform: StudioPlatform;
+  canvasConfig?: {
+    screens?: ArtboardScreen[];
+    activeScreenIndex?: number;
+    platform?: StudioPlatform;
+  };
+};
+
 function slidesToScreens(slides: AiSlide[], existing?: ArtboardScreen[]): ArtboardScreen[] {
   return slides.map((slide, i) => {
     const prev = existing?.[i];
-    const deviceImage = prev?.elements.find((e) => e.type === 'device')?.imageUrl;
+    const deviceImage =
+      slide.imageUrl || prev?.elements.find((e) => e.type === 'device')?.imageUrl;
+    const headY = slide.headlineY ?? 20;
+    const deviceY = slide.deviceY ?? 64;
+    const deviceX = slide.deviceX ?? 50;
     const elements: CanvasElement[] = [
       {
         id: `el-badge-${i}-${Date.now()}`,
         type: 'badge',
         x: 50,
-        y: 10,
+        y: Math.max(8, headY - 10),
         text: slide.badgeText || 'Featured',
         color: '#ffffff',
         zIndex: 3,
@@ -60,7 +94,7 @@ function slidesToScreens(slides: AiSlide[], existing?: ArtboardScreen[]): Artboa
         id: `el-head-${i}-${Date.now()}`,
         type: 'headline',
         x: 50,
-        y: 20,
+        y: headY,
         text: slide.headline,
         color: slide.textColor || '#ffffff',
         fontSize: 24,
@@ -70,17 +104,17 @@ function slidesToScreens(slides: AiSlide[], existing?: ArtboardScreen[]): Artboa
         id: `el-sub-${i}-${Date.now()}`,
         type: 'subhead',
         x: 50,
-        y: 30,
+        y: headY + 10,
         text: slide.subhead,
-        color: '#94a3b8',
+        color: slide.textColor === '#0f172a' || slide.textColor === '#1c1917' ? '#57534e' : '#94a3b8',
         fontSize: 13,
         zIndex: 3,
       },
       {
         id: `el-dev-${i}-${Date.now()}`,
         type: 'device',
-        x: 50,
-        y: 64,
+        x: deviceX,
+        y: deviceY,
         deviceStyle: slide.frameType || 'iphone-17-b',
         imageUrl: deviceImage,
         shadowOpacity: 55,
@@ -100,13 +134,29 @@ function slidesToScreens(slides: AiSlide[], existing?: ArtboardScreen[]): Artboa
   });
 }
 
-export default function ScreenshotStudioPage() {
+function collectDeviceImages(screens: ArtboardScreen[]): string[] {
+  return screens
+    .map((s) => s.elements.find((e) => e.type === 'device')?.imageUrl)
+    .filter((u): u is string => Boolean(u && !u.startsWith('blob:')));
+}
+
+function ScreenshotStudioInner() {
   const { user, activeOrgId } = useAuth();
-  const [platform, setPlatform] = useState<'ios' | 'android' | 'msstore' | 'web'>('ios');
+  const searchParams = useSearchParams();
+  const [platform, setPlatform] = useState<StudioPlatform>('ios');
   const [projectName, setProjectName] = useState('Inspectra Launch Set');
   const [projectId, setProjectId] = useState<string | null>(null);
 
-  const [screens, setScreens] = useState<ArtboardScreen[]>(INITIAL_SCREENS);
+  const {
+    state: screens,
+    setState: setScreens,
+    replaceState: replaceScreens,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useHistoryState<ArtboardScreen[]>(INITIAL_SCREENS);
+
   const [activeScreenIndex, setActiveScreenIndex] = useState(0);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>('templates');
@@ -115,6 +165,8 @@ export default function ScreenshotStudioPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [buyingPlanId, setBuyingPlanId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<StudioProjectListItem[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
 
   const [entitlement, setEntitlement] = useState<{
     loading: boolean;
@@ -151,24 +203,193 @@ export default function ScreenshotStudioPage() {
     }
   }, [activeOrgId, user?.isPlatformAdmin]);
 
+  const refreshProjects = useCallback(async () => {
+    if (!activeOrgId || !entitlement.hasAccess) return;
+    setProjectsLoading(true);
+    try {
+      const data = await apiFetch<StudioProjectListItem[]>(
+        `/organizations/${activeOrgId}/screenshot-studio/projects`,
+        { orgId: activeOrgId },
+      );
+      setProjects(Array.isArray(data) ? data : []);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not load projects');
+    } finally {
+      setProjectsLoading(false);
+    }
+  }, [activeOrgId, entitlement.hasAccess]);
+
   useEffect(() => {
     void refreshEntitlement();
   }, [refreshEntitlement]);
+
+  useEffect(() => {
+    if (entitlement.hasAccess) void refreshProjects();
+  }, [entitlement.hasAccess, refreshProjects]);
+
+  useEffect(() => {
+    const studio = searchParams.get('studio');
+    const canceled = searchParams.get('canceled');
+    if (studio === '1') {
+      toast.success('Studio access unlocked — welcome back');
+      void refreshEntitlement();
+    } else if (canceled === '1') {
+      toast.message('Checkout canceled');
+    }
+  }, [searchParams, refreshEntitlement]);
+
+  const handleSave = useCallback(async () => {
+    if (!activeOrgId) return;
+    setIsSaving(true);
+    try {
+      const needsPersist = screens.some((s) =>
+        s.elements.some((e) => e.imageUrl?.startsWith('blob:')),
+      );
+      const durableScreens = needsPersist ? await persistableScreens(screens) : screens;
+      if (needsPersist) {
+        replaceScreens(durableScreens);
+      }
+      const sized = PLATFORM_EXPORT_SIZE[platform];
+      const canvasConfig = {
+        screens: durableScreens.map((s) => ({
+          ...s,
+          widthPx: sized.width,
+          heightPx: sized.height,
+        })),
+        activeScreenIndex,
+        platform,
+      };
+      const exportSettings = {
+        width: sized.width,
+        height: sized.height,
+        label: sized.label,
+      };
+      if (projectId) {
+        await apiFetch(`/organizations/${activeOrgId}/screenshot-studio/projects/${projectId}`, {
+          method: 'PATCH',
+          orgId: activeOrgId,
+          body: JSON.stringify({
+            name: projectName,
+            platform,
+            canvasConfig,
+            exportSettings,
+          }),
+        });
+      } else {
+        const created = await apiFetch<{ id: string }>(
+          `/organizations/${activeOrgId}/screenshot-studio/projects`,
+          {
+            method: 'POST',
+            orgId: activeOrgId,
+            body: JSON.stringify({
+              name: projectName,
+              platform,
+              canvasConfig,
+              exportSettings,
+            }),
+          },
+        );
+        setProjectId(created.id);
+      }
+      toast.success('Project saved');
+      void refreshProjects();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    activeOrgId,
+    screens,
+    replaceScreens,
+    platform,
+    activeScreenIndex,
+    projectId,
+    projectName,
+    refreshProjects,
+  ]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (!meta) return;
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+        e.preventDefault();
+        redo();
+      } else if (e.key === 's') {
+        e.preventDefault();
+        void handleSave();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo, handleSave]);
 
   const handleApplyTemplate = (template: TemplatePreset) => {
     setScreens((prev) => {
       const copy = [...prev];
       const target = copy[activeScreenIndex];
       if (!target) return prev;
+      const prevDevice = target.elements.find((el) => el.type === 'device');
+      const stamp = Date.now();
+      const elements: CanvasElement[] = [
+        {
+          id: `el-badge-${stamp}`,
+          type: 'badge',
+          x: 50,
+          y: template.badgeY ?? 10,
+          text: template.badgeText || 'Featured',
+          color: template.textColor,
+          zIndex: 3,
+        },
+        {
+          id: `el-head-${stamp}`,
+          type: 'headline',
+          x: 50,
+          y: template.headlineY ?? 20,
+          text: template.headline || 'New headline',
+          color: template.textColor,
+          fontSize: 24,
+          zIndex: 3,
+        },
+        {
+          id: `el-sub-${stamp}`,
+          type: 'subhead',
+          x: 50,
+          y: template.subheadY ?? 30,
+          text: template.subhead || 'Supporting line goes here.',
+          color:
+            template.textColor === '#ffffff' || template.textColor === '#fef3c7'
+              ? '#94a3b8'
+              : '#57534e',
+          fontSize: 13,
+          zIndex: 3,
+        },
+        {
+          id: `el-dev-${stamp}`,
+          type: 'device',
+          x: template.deviceX ?? 50,
+          y: template.deviceY ?? 64,
+          deviceStyle: template.deviceStyle || prevDevice?.deviceStyle || 'iphone-17-b',
+          imageUrl: prevDevice?.imageUrl,
+          shadowOpacity: 55,
+          zIndex: 2,
+        },
+      ];
       copy[activeScreenIndex] = {
         ...target,
         backgroundColor: template.backgroundColor,
         gradientBackground: template.gradientBackground,
         textColor: template.textColor,
+        elements,
       };
       return copy;
     });
-    toast.success(`Applied “${template.name}”`);
+    setSelectedElementId(null);
+    toast.success(`Applied “${template.name}” layout`);
   };
 
   const handleAddMockup = (style: DeviceStyle) => {
@@ -268,41 +489,45 @@ export default function ScreenshotStudioPage() {
     setSelectedElementId(newText.id);
   };
 
-  const handleUploadImage = (file: File) => {
-    const url = URL.createObjectURL(file);
-    setScreens((prev) => {
-      const copy = [...prev];
-      const target = copy[activeScreenIndex];
-      if (!target) return prev;
-      const deviceEl = target.elements.find((el) => el.type === 'device');
-      if (deviceEl) {
-        copy[activeScreenIndex] = {
-          ...target,
-          elements: target.elements.map((el) =>
-            el.type === 'device' ? { ...el, imageUrl: url } : el,
-          ),
-        };
-        setSelectedElementId(deviceEl.id);
-      } else {
-        const newDevice: CanvasElement = {
-          id: `el-dev-${Date.now()}`,
-          type: 'device',
-          x: 50,
-          y: 64,
-          deviceStyle: platform === 'android' ? 'android-pixel' : 'iphone-17-b',
-          imageUrl: url,
-          shadowOpacity: 55,
-          zIndex: 2,
-        };
-        copy[activeScreenIndex] = {
-          ...target,
-          elements: [...target.elements, newDevice],
-        };
-        setSelectedElementId(newDevice.id);
-      }
-      return copy;
-    });
-    toast.success('Screenshot placed in device frame');
+  const handleUploadImage = async (file: File) => {
+    try {
+      const url = await fileToDataUrl(file);
+      setScreens((prev) => {
+        const copy = [...prev];
+        const target = copy[activeScreenIndex];
+        if (!target) return prev;
+        const deviceEl = target.elements.find((el) => el.type === 'device');
+        if (deviceEl) {
+          copy[activeScreenIndex] = {
+            ...target,
+            elements: target.elements.map((el) =>
+              el.type === 'device' ? { ...el, imageUrl: url } : el,
+            ),
+          };
+          setSelectedElementId(deviceEl.id);
+        } else {
+          const newDevice: CanvasElement = {
+            id: `el-dev-${Date.now()}`,
+            type: 'device',
+            x: 50,
+            y: 64,
+            deviceStyle: platform === 'android' ? 'android-pixel' : 'iphone-17-b',
+            imageUrl: url,
+            shadowOpacity: 55,
+            zIndex: 2,
+          };
+          copy[activeScreenIndex] = {
+            ...target,
+            elements: [...target.elements, newDevice],
+          };
+          setSelectedElementId(newDevice.id);
+        }
+        return copy;
+      });
+      toast.success('Screenshot placed in device frame');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
+    }
   };
 
   const handleApplyBackground = (bg: { gradient?: string; color?: string }) => {
@@ -338,6 +563,7 @@ export default function ScreenshotStudioPage() {
             targetPlatform: platform,
             theme: params.theme,
             primaryColor: params.primaryColor,
+            rawScreenshotUrls: collectDeviceImages(screens).slice(0, 8),
           }),
         },
       );
@@ -345,14 +571,20 @@ export default function ScreenshotStudioPage() {
         toast.error('AI returned no slides');
         return;
       }
-      setScreens(slidesToScreens(data.slides, screens));
+      const sized = PLATFORM_EXPORT_SIZE[platform];
+      const next = slidesToScreens(data.slides, screens).map((s) => ({
+        ...s,
+        widthPx: sized.width,
+        heightPx: sized.height,
+      }));
+      replaceScreens(next);
       setActiveScreenIndex(0);
       setSelectedElementId(null);
       setProjectName(params.appName || projectName);
       toast.success(
         data.generatedBy === 'llm'
-          ? 'AI layout applied (LLM copy)'
-          : 'AI layout applied (template engine)',
+          ? 'AI set applied — LLM copy + layouts'
+          : 'AI set applied — smart template layouts',
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'AI generate failed');
@@ -360,68 +592,84 @@ export default function ScreenshotStudioPage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleOpenProject = async (id: string) => {
     if (!activeOrgId) return;
-    setIsSaving(true);
     try {
-      const canvasConfig = { screens, activeScreenIndex, platform };
-      if (projectId) {
-        await apiFetch(`/organizations/${activeOrgId}/screenshot-studio/projects/${projectId}`, {
-          method: 'PATCH',
-          orgId: activeOrgId,
-          body: JSON.stringify({
-            name: projectName,
-            platform,
-            canvasConfig,
-          }),
-        });
-      } else {
-        const created = await apiFetch<{ id: string }>(
-          `/organizations/${activeOrgId}/screenshot-studio/projects`,
-          {
-            method: 'POST',
-            orgId: activeOrgId,
-            body: JSON.stringify({
-              name: projectName,
-              platform,
-              canvasConfig,
-            }),
-          },
-        );
-        setProjectId(created.id);
-      }
-      toast.success('Project saved');
+      const project = await apiFetch<StoredProject>(
+        `/organizations/${activeOrgId}/screenshot-studio/projects/${id}`,
+        { orgId: activeOrgId },
+      );
+      const cfg = project.canvasConfig;
+      const loadedScreens = cfg?.screens?.length ? cfg.screens : INITIAL_SCREENS;
+      replaceScreens(loadedScreens);
+      setActiveScreenIndex(cfg?.activeScreenIndex ?? 0);
+      setSelectedElementId(null);
+      setProjectId(project.id);
+      setProjectName(project.name);
+      setPlatform((cfg?.platform || project.platform || 'ios') as StudioPlatform);
+      toast.success(`Opened “${project.name}”`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Save failed');
-    } finally {
-      setIsSaving(false);
+      toast.error(err instanceof Error ? err.message : 'Could not open project');
     }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    if (!activeOrgId) return;
+    if (!window.confirm('Delete this Studio project?')) return;
+    try {
+      await apiFetch(`/organizations/${activeOrgId}/screenshot-studio/projects/${id}`, {
+        method: 'DELETE',
+        orgId: activeOrgId,
+      });
+      if (projectId === id) {
+        setProjectId(null);
+        replaceScreens(INITIAL_SCREENS);
+        setProjectName('Inspectra Launch Set');
+        setActiveScreenIndex(0);
+      }
+      toast.success('Project deleted');
+      void refreshProjects();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
+
+  const handleNewProject = () => {
+    setProjectId(null);
+    replaceScreens(INITIAL_SCREENS);
+    setProjectName('Inspectra Launch Set');
+    setActiveScreenIndex(0);
+    setSelectedElementId(null);
+    toast.message('New blank project');
   };
 
   const handleExport = async () => {
     setIsExporting(true);
+    setSelectedElementId(null);
     try {
-      const nodes = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-artboard-id]'),
-      );
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-artboard-id]'));
       if (!nodes.length) {
         toast.error('No artboards to export');
         return;
       }
+      const sized = PLATFORM_EXPORT_SIZE[platform];
+      const pixelRatio = sized.width / PREVIEW_ARTBOARD.width;
+      const base = slugify(projectName);
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]!;
         const dataUrl = await toPng(node, {
           cacheBust: true,
-          pixelRatio: 2,
+          pixelRatio,
           backgroundColor: undefined,
         });
         const a = document.createElement('a');
         a.href = dataUrl;
-        a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}-${i + 1}.png`;
+        a.download = `${base}-${String(i + 1).padStart(2, '0')}-${sized.width}x${sized.height}.png`;
         a.click();
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 280));
       }
-      toast.success(`Exported ${nodes.length} PNG frame(s)`);
+      toast.success(`Exported ${nodes.length} store-size PNG(s) · ${sized.label}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Export failed');
     } finally {
@@ -484,32 +732,73 @@ export default function ScreenshotStudioPage() {
     );
   }
 
+  const exportLabel = PLATFORM_EXPORT_SIZE[platform].label;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageHeader
           title="Inspectra Studio"
-          description="Design, drag-align, AI-generate, and export App Store & Play Store frames."
+          description={`Design, AI-compose, and export store frames · ${exportLabel}`}
         />
-        <Button
-          onClick={() => void handleSave()}
-          disabled={isSaving}
-          variant="outline"
-          className="border-white/15 bg-white/5 text-white hover:bg-white/10"
-        >
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          <span className="ml-2">Save project</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canUndo}
+            onClick={undo}
+            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+            title="Undo (⌘Z)"
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canRedo}
+            onClick={redo}
+            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+            title="Redo (⌘⇧Z)"
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+            variant="outline"
+            className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+          >
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span className="ml-2">Save project</span>
+          </Button>
+        </div>
       </div>
+
+      <StudioProjectLibrary
+        projects={projects}
+        loading={projectsLoading}
+        activeProjectId={projectId}
+        onRefresh={() => void refreshProjects()}
+        onOpen={(id) => void handleOpenProject(id)}
+        onDelete={(id) => void handleDeleteProject(id)}
+        onNew={handleNewProject}
+      />
 
       <StudioToolbar
         platform={platform}
-        setPlatform={setPlatform}
+        setPlatform={(p) => {
+          setPlatform(p);
+          const sized = PLATFORM_EXPORT_SIZE[p];
+          setScreens((prev) =>
+            prev.map((s) => ({ ...s, widthPx: sized.width, heightPx: sized.height })),
+          );
+        }}
         onOpenAiModal={() => setIsAiModalOpen(true)}
         onExport={() => void handleExport()}
         isExporting={isExporting}
         projectName={projectName}
         setProjectName={setProjectName}
+        exportLabel={exportLabel}
       />
 
       <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
@@ -522,7 +811,7 @@ export default function ScreenshotStudioPage() {
           onAddIcon={handleAddIcon}
           onAddText={handleAddText}
           onApplyBackground={handleApplyBackground}
-          onUploadImage={handleUploadImage}
+          onUploadImage={(file) => void handleUploadImage(file)}
         />
         <StudioCanvas
           screens={screens}
@@ -532,6 +821,7 @@ export default function ScreenshotStudioPage() {
           selectedElementId={selectedElementId}
           setSelectedElementId={setSelectedElementId}
           platform={platform}
+          cleanExport={isExporting}
         />
       </div>
 
@@ -539,7 +829,22 @@ export default function ScreenshotStudioPage() {
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         onGenerate={handleAiGenerate}
+        screenshotCount={collectDeviceImages(screens).length}
       />
     </div>
+  );
+}
+
+export default function ScreenshotStudioPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[400px] items-center justify-center text-slate-400">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      }
+    >
+      <ScreenshotStudioInner />
+    </Suspense>
   );
 }
