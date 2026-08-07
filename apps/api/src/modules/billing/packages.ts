@@ -38,6 +38,14 @@ export const AUDIT_PACKAGES: AuditPackage[] = [
     blurb: 'High volume audits for agencies and in-house ops.',
     stripePriceEnv: 'STRIPE_PRICE_PACK_PRO',
   },
+  {
+    id: 'screenshot-studio',
+    name: 'ShotLuma Studio Addon',
+    audits: 0,
+    priceUsd: 9.99,
+    blurb: 'Unlock AI-powered ShotLuma Screenshot set builder and store graphics exporter.',
+    stripePriceEnv: 'STRIPE_PRICE_ADDON_SCREENSHOT_STUDIO',
+  },
 ];
 
 export function getAuditPackage(id: string): AuditPackage | undefined {

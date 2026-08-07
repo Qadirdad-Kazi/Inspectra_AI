@@ -179,6 +179,7 @@ model User {
   findingTriages          FindingTriageEvent[]
   auditComments           AuditComment[]
   schedulesCreated        AuditSchedule[]           @relation("ScheduleCreator")
+  screenshotProjects      ScreenshotStudioProject[]
 
   @@index([isActive])
   @@index([isPlatformAdmin])
@@ -258,6 +259,7 @@ model Organization {
   auditSchedules      AuditSchedule[]
   workflowLogs        WorkflowLog[]
   auditComments       AuditComment[]
+  screenshotProjects  ScreenshotStudioProject[]
 
   @@index([isActive])
   @@map("organizations")
@@ -848,3 +850,25 @@ model AuditComment {
   @@index([organizationId])
   @@map("audit_comments")
 }
+
+/// ShotLuma-style screenshot studio projects and custom marketing visual configurations.
+model ScreenshotStudioProject {
+  id             String   @id @default(cuid())
+  organizationId String
+  assetId        String?
+  createdById    String
+  name           String
+  platform       String   @default("ios")
+  canvasConfig   Json     @default("{}")
+  exportSettings Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([createdById])
+  @@map("screenshot_studio_projects")
+}
+

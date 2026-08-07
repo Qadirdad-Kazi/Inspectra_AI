@@ -15,6 +15,7 @@ import { SchedulesModule } from './modules/schedules/schedules.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CollaborationModule } from './modules/collaboration/collaboration.module';
+import { ScreenshotStudioModule } from './modules/screenshot-studio/screenshot-studio.module';
 import { AuthGuard } from './common/guards/auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ApiExceptionFilter } from './common/filters/api-exception.filter';
@@ -36,6 +37,7 @@ import { ApiExceptionFilter } from './common/filters/api-exception.filter';
     ApiKeysModule,
     AnalyticsModule,
     CollaborationModule,
+    ScreenshotStudioModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
