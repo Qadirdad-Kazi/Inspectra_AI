@@ -238,6 +238,23 @@ export default function ScreenshotStudioPage() {
     toast.success('Uploaded screenshot to active screen!');
   };
 
+  // Background handler
+  const handleApplyBackground = (bg: { gradient?: string; color?: string }) => {
+    setScreens((prev) => {
+      const copy = [...prev];
+      const target = copy[activeScreenIndex];
+      if (target) {
+        copy[activeScreenIndex] = {
+          ...target,
+          gradientBackground: bg.gradient || '',
+          backgroundColor: bg.color || target.backgroundColor,
+        };
+      }
+      return copy;
+    });
+    toast.success('Applied background styling');
+  };
+
   const handleAiGenerate = async (params: {
     appName: string;
     appDescription: string;
@@ -328,6 +345,7 @@ export default function ScreenshotStudioPage() {
             onAddShape={handleAddShape}
             onAddIcon={handleAddIcon}
             onAddText={handleAddText}
+            onApplyBackground={handleApplyBackground}
             onUploadImage={handleUploadImage}
           />
         </div>

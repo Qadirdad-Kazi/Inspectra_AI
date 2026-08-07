@@ -10,6 +10,30 @@ import {
   ArrowRight,
   Pin,
   Minus,
+  CheckCircle2,
+  Star,
+  Heart,
+  ThumbsUp,
+  Trophy,
+  Bell,
+  Mail,
+  MessageSquare,
+  Phone,
+  Play,
+  Music,
+  Mic,
+  Eye,
+  Lock,
+  Sparkles,
+  Circle,
+  Square,
+  Triangle,
+  Diamond,
+  Zap,
+  Flame,
+  Activity,
+  ArrowRight as ArrowRightIcon,
+  TrendingUp,
 } from 'lucide-react';
 import { StudioFloatingToolbar } from './studio-floating-toolbar';
 
@@ -111,6 +135,42 @@ export const INITIAL_SCREENS: ArtboardScreen[] = [
   },
 ];
 
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  check: CheckCircle2,
+  star: Star,
+  heart: Heart,
+  thumb: ThumbsUp,
+  trophy: Trophy,
+  bell: Bell,
+  mail: Mail,
+  chat: MessageSquare,
+  phone: Phone,
+  image: ImageIcon,
+  play: Play,
+  music: Music,
+  mic: Mic,
+  eye: Eye,
+  lock: Lock,
+  sparkles: Sparkles,
+};
+
+const SHAPE_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  circle: Circle,
+  square: Square,
+  'soft-square': Square,
+  pill: Circle,
+  triangle: Triangle,
+  diamond: Diamond,
+  star: Star,
+  burst: Zap,
+  spark: Flame,
+  blob: Activity,
+  ring: Circle,
+  line: Minus,
+  arrow: ArrowRightIcon,
+  wave: TrendingUp,
+};
+
 interface StudioCanvasProps {
   screens: ArtboardScreen[];
   setScreens: React.Dispatch<React.SetStateAction<ArtboardScreen[]>>;
@@ -129,8 +189,10 @@ export function StudioCanvas({
   setSelectedElementId,
 }: StudioCanvasProps) {
   const [zoomLevel, setZoomLevel] = useState(90);
-  const activeScreen = screens[activeScreenIndex] ?? screens[0] ?? INITIAL_SCREENS[0];
+  const [draggingElId, setDraggingElId] = useState<string | null>(null);
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  const activeScreen = screens[activeScreenIndex] ?? screens[0] ?? INITIAL_SCREENS[0];
   const activeElement = activeScreen?.elements.find((el) => el.id === selectedElementId);
 
   // Screen level actions
@@ -248,8 +310,38 @@ export function StudioCanvas({
     setSelectedElementId(dupEl.id);
   };
 
+  // Drag element handler
+  const handleMouseDownElement = (e: React.MouseEvent, elId: string) => {
+    e.stopPropagation();
+    setSelectedElementId(elId);
+    setDraggingElId(elId);
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMoveCanvas = (e: React.MouseEvent) => {
+    if (!draggingElId) return;
+    const dx = e.clientX - dragStartPos.x;
+    const dy = e.clientY - dragStartPos.y;
+
+    const percentDx = (dx / 340) * 100;
+    const percentDy = (dy / 640) * 100;
+
+    const el = activeScreen?.elements.find((item) => item.id === draggingElId);
+    if (el) {
+      updateElement(draggingElId, {
+        x: Math.max(5, Math.min(95, el.x + percentDx)),
+        y: Math.max(5, Math.min(95, el.y + percentDy)),
+      });
+      setDragStartPos({ x: e.clientX, y: e.clientY });
+    }
+  };
+
+  const handleMouseUpCanvas = () => {
+    setDraggingElId(null);
+  };
+
   return (
-    <div className="relative flex flex-col gap-6">
+    <div className="relative flex flex-col gap-6 select-none">
       {/* Floating Context Toolbar for Selected Object */}
       {activeElement ? (
         <div className="sticky top-0 z-30 flex justify-center py-2">
@@ -280,7 +372,11 @@ export function StudioCanvas({
       ) : null}
 
       {/* Multi-Artboard Scrollable Workspace */}
-      <div className="relative flex items-start gap-8 overflow-x-auto p-6 scrollbar-thin scrollbar-thumb-white/10 min-h-[640px] rounded-2xl border border-white/10 bg-slate-950/90 shadow-2xl">
+      <div
+        onMouseMove={handleMouseMoveCanvas}
+        onMouseUp={handleMouseUpCanvas}
+        className="relative flex items-start gap-8 overflow-x-auto p-6 scrollbar-thin scrollbar-thumb-white/10 min-h-[640px] rounded-2xl border border-white/10 bg-slate-950/90 shadow-2xl"
+      >
         {screens.map((screen, sIdx) => {
           const isActiveScreen = activeScreenIndex === sIdx;
           return (
@@ -364,11 +460,8 @@ export function StudioCanvas({
                     return (
                       <div
                         key={el.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedElementId(el.id);
-                        }}
-                        className={`cursor-pointer rounded-full bg-white/20 px-3.5 py-1 text-[11px] font-semibold tracking-wide backdrop-blur-md border border-white/20 transition ${
+                        onMouseDown={(e) => handleMouseDownElement(e, el.id)}
+                        className={`cursor-grab active:cursor-grabbing rounded-full bg-white/20 px-3.5 py-1 text-[11px] font-semibold tracking-wide backdrop-blur-md border border-white/20 transition ${
                           isSelected ? 'ring-2 ring-teal-400 bg-white/30' : 'hover:bg-white/30'
                         }`}
                       >
@@ -381,11 +474,8 @@ export function StudioCanvas({
                     return (
                       <div
                         key={el.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedElementId(el.id);
-                        }}
-                        className={`cursor-pointer text-center font-extrabold tracking-tight leading-snug drop-shadow-md px-2 py-1 transition rounded-lg ${
+                        onMouseDown={(e) => handleMouseDownElement(e, el.id)}
+                        className={`cursor-grab active:cursor-grabbing text-center font-extrabold tracking-tight leading-snug drop-shadow-md px-2 py-1 transition rounded-lg ${
                           isSelected ? 'ring-2 ring-teal-400 bg-white/10' : 'hover:bg-white/5'
                         }`}
                         style={{ fontSize: `${el.fontSize || 22}px`, color: el.color || '#ffffff' }}
@@ -399,15 +489,42 @@ export function StudioCanvas({
                     return (
                       <div
                         key={el.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedElementId(el.id);
-                        }}
-                        className={`cursor-pointer text-center text-xs font-medium text-white/80 max-w-[280px] px-2 py-1 transition rounded-lg ${
+                        onMouseDown={(e) => handleMouseDownElement(e, el.id)}
+                        className={`cursor-grab active:cursor-grabbing text-center text-xs font-medium text-white/80 max-w-[280px] px-2 py-1 transition rounded-lg ${
                           isSelected ? 'ring-2 ring-teal-400 bg-white/10' : 'hover:bg-white/5'
                         }`}
                       >
                         {el.text || 'Add your key feature or value proposition.'}
+                      </div>
+                    );
+                  }
+
+                  if (el.type === 'shape') {
+                    const ShapeComp = SHAPE_MAP[el.shapeType || 'circle'] || Circle;
+                    return (
+                      <div
+                        key={el.id}
+                        onMouseDown={(e) => handleMouseDownElement(e, el.id)}
+                        className={`cursor-grab active:cursor-grabbing flex items-center justify-center p-2 rounded-xl border border-teal-400/40 bg-teal-500/20 text-teal-300 transition ${
+                          isSelected ? 'ring-2 ring-teal-400 bg-teal-500/30' : 'hover:bg-teal-500/30'
+                        }`}
+                      >
+                        <ShapeComp className="h-8 w-8" />
+                      </div>
+                    );
+                  }
+
+                  if (el.type === 'icon') {
+                    const IconComp = ICON_MAP[el.iconId || 'sparkles'] || Sparkles;
+                    return (
+                      <div
+                        key={el.id}
+                        onMouseDown={(e) => handleMouseDownElement(e, el.id)}
+                        className={`cursor-grab active:cursor-grabbing flex items-center justify-center p-2 rounded-xl border border-teal-400/40 bg-teal-500/20 text-teal-300 transition ${
+                          isSelected ? 'ring-2 ring-teal-400 bg-teal-500/30' : 'hover:bg-teal-500/30'
+                        }`}
+                      >
+                        <IconComp className="h-8 w-8" />
                       </div>
                     );
                   }
@@ -418,11 +535,8 @@ export function StudioCanvas({
                     return (
                       <div
                         key={el.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedElementId(el.id);
-                        }}
-                        className={`relative cursor-pointer transition rounded-3xl p-1 ${
+                        onMouseDown={(e) => handleMouseDownElement(e, el.id)}
+                        className={`relative cursor-grab active:cursor-grabbing transition rounded-3xl p-1 ${
                           isSelected ? 'ring-4 ring-teal-400/80 bg-teal-500/10' : 'hover:opacity-95'
                         }`}
                       >
@@ -437,9 +551,10 @@ export function StudioCanvas({
                                   className="h-full w-full object-cover"
                                 />
                               ) : (
-                                <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-slate-500">
-                                  <ImageIcon className="h-8 w-8 mb-1 opacity-50 text-teal-400" />
-                                  <span className="text-[10px] font-medium text-slate-400">Click to add screenshot</span>
+                                <div className="flex h-full w-full flex-col items-center justify-center p-4 text-center text-slate-400 border-2 border-dashed border-teal-500/40 rounded-xl bg-slate-900/90">
+                                  <ImageIcon className="h-8 w-8 mb-2 text-teal-400" />
+                                  <span className="text-[11px] font-bold text-teal-200">Add App Screenshot</span>
+                                  <span className="text-[9px] text-slate-400 mt-1">Click toolbar to upload</span>
                                 </div>
                               )}
                             </div>

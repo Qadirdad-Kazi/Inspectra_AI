@@ -27,6 +27,17 @@ import {
   Eye,
   Lock,
   Plus,
+  Circle,
+  Square,
+  Triangle,
+  Diamond,
+  Zap,
+  Flame,
+  Activity,
+  ArrowRight,
+  TrendingUp,
+  Check,
+  Minus,
 } from 'lucide-react';
 import { type DeviceStyle, DEVICE_PRESETS } from './studio-canvas';
 
@@ -89,22 +100,36 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
   },
 ];
 
+export const BACKGROUND_PRESETS = [
+  { name: 'Deep Space', gradient: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)', color: '#0f172a' },
+  { name: 'Midnight Cyber', gradient: 'linear-gradient(135deg, #020617 0%, #172554 100%)', color: '#020617' },
+  { name: 'Emerald Glass', gradient: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)', color: '#090d16' },
+  { name: 'Velvet Purple', gradient: 'linear-gradient(135deg, #111827 0%, #4c1d95 100%)', color: '#111827' },
+  { name: 'Sunset Glow', gradient: 'linear-gradient(135deg, #7c2d12 0%, #c2410c 100%)', color: '#7c2d12' },
+  { name: 'Clean Light', gradient: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', color: '#f8fafc' },
+];
+
+export const SOLID_COLORS = [
+  '#0f172a', '#020617', '#111827', '#18181b', '#090d16',
+  '#2563eb', '#0d9488', '#059669', '#7c3aed', '#db2777',
+  '#ea580c', '#ca8a04', '#ffffff', '#f1f5f9', '#94a3b8',
+];
+
 export const VECTOR_SHAPES = [
-  { id: 'circle', label: 'Circle', category: 'Base' },
-  { id: 'square', label: 'Square', category: 'Base' },
-  { id: 'soft-square', label: 'Soft square', category: 'Base' },
-  { id: 'pill', label: 'Pill', category: 'Base' },
-  { id: 'triangle', label: 'Triangle', category: 'Base' },
-  { id: 'diamond', label: 'Diamond', category: 'Base' },
-  { id: 'star', label: 'Star', category: 'Accent' },
-  { id: 'burst', label: 'Burst', category: 'Accent' },
-  { id: 'spark', label: 'Spark', category: 'Accent' },
-  { id: 'blob', label: 'Blob', category: 'Accent' },
-  { id: 'arch', label: 'Arch', category: 'Accent' },
-  { id: 'ring', label: 'Ring', category: 'Accent' },
-  { id: 'line', label: 'Line', category: 'Lines' },
-  { id: 'arrow', label: 'Arrow', category: 'Lines' },
-  { id: 'wave', label: 'Wave', category: 'Lines' },
+  { id: 'circle', label: 'Circle', category: 'Base', icon: Circle },
+  { id: 'square', label: 'Square', category: 'Base', icon: Square },
+  { id: 'soft-square', label: 'Soft square', category: 'Base', icon: Square },
+  { id: 'pill', label: 'Pill', category: 'Base', icon: Circle },
+  { id: 'triangle', label: 'Triangle', category: 'Base', icon: Triangle },
+  { id: 'diamond', label: 'Diamond', category: 'Base', icon: Diamond },
+  { id: 'star', label: 'Star', category: 'Accent', icon: Star },
+  { id: 'burst', label: 'Burst', category: 'Accent', icon: Zap },
+  { id: 'spark', label: 'Spark', category: 'Accent', icon: Flame },
+  { id: 'blob', label: 'Blob', category: 'Accent', icon: Activity },
+  { id: 'ring', label: 'Ring', category: 'Accent', icon: Circle },
+  { id: 'line', label: 'Line', category: 'Lines', icon: Minus },
+  { id: 'arrow', label: 'Arrow', category: 'Lines', icon: ArrowRight },
+  { id: 'wave', label: 'Wave', category: 'Lines', icon: TrendingUp },
 ];
 
 export const VECTOR_ICONS = [
@@ -134,6 +159,7 @@ interface StudioSidebarProps {
   onAddShape: (shapeId: string) => void;
   onAddIcon: (iconId: string) => void;
   onAddText: (type: 'headline' | 'subhead' | 'badge') => void;
+  onApplyBackground: (bg: { gradient?: string; color?: string }) => void;
   onUploadImage: (file: File) => void;
 }
 
@@ -145,6 +171,7 @@ export function StudioSidebar({
   onAddShape,
   onAddIcon,
   onAddText,
+  onApplyBackground,
   onUploadImage,
 }: StudioSidebarProps) {
   const [iconSearch, setIconSearch] = useState('');
@@ -272,16 +299,21 @@ export function StudioSidebar({
               <div key={category} className="flex flex-col gap-2">
                 <span className="text-[11px] font-semibold text-slate-400">{category}</span>
                 <div className="grid grid-cols-3 gap-2">
-                  {VECTOR_SHAPES.filter((s) => s.category === category).map((shape) => (
-                    <button
-                      key={shape.id}
-                      onClick={() => onAddShape(shape.id)}
-                      className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-slate-950/60 p-3 text-center transition hover:border-teal-500/50 hover:bg-slate-950"
-                    >
-                      <div className="h-6 w-6 rounded bg-teal-400/80 shadow" />
-                      <span className="text-[10px] text-slate-300">{shape.label}</span>
-                    </button>
-                  ))}
+                  {VECTOR_SHAPES.filter((s) => s.category === category).map((shape) => {
+                    const ShapeIcon = shape.icon;
+                    return (
+                      <button
+                        key={shape.id}
+                        onClick={() => onAddShape(shape.id)}
+                        className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-slate-950/60 p-3 text-center transition hover:border-teal-500/50 hover:bg-slate-950"
+                      >
+                        <div className="flex h-7 w-7 items-center justify-center rounded bg-teal-500/20 border border-teal-400/40 text-teal-300 shadow">
+                          <ShapeIcon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] text-slate-300">{shape.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -368,6 +400,46 @@ export function StudioSidebar({
                 </div>
                 <Plus className="h-4 w-4 text-teal-400" />
               </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* BACKGROUND TAB */}
+        {activeTab === 'background' ? (
+          <div className="flex flex-col gap-4">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">CANVAS STYLING</span>
+              <h3 className="text-lg font-bold text-white">Background</h3>
+              <p className="text-xs text-slate-400">Apply vibrant gradients or solid colors to your screen.</p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold text-slate-300">Vibrant Gradients</span>
+              <div className="grid grid-cols-2 gap-2">
+                {BACKGROUND_PRESETS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onApplyBackground({ gradient: preset.gradient })}
+                    className="flex flex-col justify-between h-16 rounded-xl border border-white/15 p-2 text-left shadow transition hover:scale-105"
+                    style={{ background: preset.gradient }}
+                  >
+                    <span className="text-[10px] font-bold text-white drop-shadow">{preset.name}</span>
+                    <Check className="h-3.5 w-3.5 text-white/70 self-end" />
+                  </button>
+                ))}
+              </div>
+
+              <span className="text-xs font-semibold text-slate-300 mt-2">Solid Colors</span>
+              <div className="grid grid-cols-5 gap-2">
+                {SOLID_COLORS.map((c, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onApplyBackground({ color: c })}
+                    className="h-8 rounded-lg border border-white/20 shadow transition hover:scale-110"
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         ) : null}
