@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import {
@@ -45,6 +46,8 @@ import {
   AlignRight,
 } from 'lucide-react';
 import { StudioFloatingToolbar } from './studio-floating-toolbar';
+import { matrix3dForQuad, quadToPixels, type Point } from './perspective';
+import screenQuads from './screen-quads.json';
 
 export type DeviceStyle =
   | 'iphone-17-a'
@@ -90,21 +93,38 @@ export interface ArtboardScreen {
   heightPx?: number;
 }
 
-export const DEVICE_PRESETS: {
+type DevicePreset = {
   id: DeviceStyle;
   label: string;
   overlay: string;
-  /** Alpha mask of the screen hole (white = show screenshot) */
+  /** Alpha mask of the screen hole (opaque = show screenshot) */
   screenMask?: string;
+  /** Normalized screen corners TL, TR, BR, BL for perspective alignment */
+  screenQuad?: Point[];
   kind: 'overlay' | 'css';
   /** Display box aspect hint */
   boxClass?: string;
-}[] = [
+};
+
+function quadFor(id: string): Point[] | undefined {
+  const entry = (screenQuads as Record<string, { quad: Point[] }>)[id];
+  return entry?.quad;
+}
+
+/** Cache-bust regenerated alpha masks */
+const MASK_VER = 'v2';
+
+function maskUrl(id: string): string {
+  return `/mockups/masks/${id}.png?${MASK_VER}`;
+}
+
+export const DEVICE_PRESETS: DevicePreset[] = [
   {
     id: 'iphone-17-a',
     label: 'iPhone · Upright',
     overlay: '/mockups/iphone-17-a.webp',
-    screenMask: '/mockups/masks/iphone-17-a.png',
+    screenMask: maskUrl('iphone-17-a'),
+    screenQuad: quadFor('iphone-17-a'),
     kind: 'overlay',
     boxClass: 'h-[380px] w-[185px]',
   },
@@ -112,7 +132,8 @@ export const DEVICE_PRESETS: {
     id: 'iphone-17-b',
     label: 'iPhone · Front',
     overlay: '/mockups/iphone-17-b.webp',
-    screenMask: '/mockups/masks/iphone-17-b.png',
+    screenMask: maskUrl('iphone-17-b'),
+    screenQuad: quadFor('iphone-17-b'),
     kind: 'overlay',
     boxClass: 'h-[380px] w-[183px]',
   },
@@ -120,7 +141,8 @@ export const DEVICE_PRESETS: {
     id: 'iphone-17-c',
     label: 'iPhone · Right',
     overlay: '/mockups/iphone-17-c.webp',
-    screenMask: '/mockups/masks/iphone-17-c.png',
+    screenMask: maskUrl('iphone-17-c'),
+    screenQuad: quadFor('iphone-17-c'),
     kind: 'overlay',
     boxClass: 'h-[300px] w-[330px]',
   },
@@ -128,7 +150,8 @@ export const DEVICE_PRESETS: {
     id: 'iphone-17-d',
     label: 'iPhone · Left',
     overlay: '/mockups/iphone-17-d.webp',
-    screenMask: '/mockups/masks/iphone-17-d.png',
+    screenMask: maskUrl('iphone-17-d'),
+    screenQuad: quadFor('iphone-17-d'),
     kind: 'overlay',
     boxClass: 'h-[290px] w-[340px]',
   },
@@ -136,7 +159,8 @@ export const DEVICE_PRESETS: {
     id: 'iphone-17-e',
     label: 'iPhone · Flat',
     overlay: '/mockups/iphone-17-e.webp',
-    screenMask: '/mockups/masks/iphone-17-e.png',
+    screenMask: maskUrl('iphone-17-e'),
+    screenQuad: quadFor('iphone-17-e'),
     kind: 'overlay',
     boxClass: 'h-[290px] w-[340px]',
   },
@@ -144,7 +168,8 @@ export const DEVICE_PRESETS: {
     id: 'iphone-17-f',
     label: 'iPhone · Lean',
     overlay: '/mockups/iphone-17-f.webp',
-    screenMask: '/mockups/masks/iphone-17-f.png',
+    screenMask: maskUrl('iphone-17-f'),
+    screenQuad: quadFor('iphone-17-f'),
     kind: 'overlay',
     boxClass: 'h-[300px] w-[300px]',
   },
@@ -152,7 +177,8 @@ export const DEVICE_PRESETS: {
     id: 'tilted-hand',
     label: 'Hand · Tilted',
     overlay: '/mockups/tilted-hand.webp',
-    screenMask: '/mockups/masks/tilted-hand.png',
+    screenMask: maskUrl('tilted-hand'),
+    screenQuad: quadFor('tilted-hand'),
     kind: 'overlay',
     boxClass: 'h-[300px] w-[355px]',
   },
@@ -900,37 +926,12 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
   const shadow = `drop-shadow(0 22px 28px rgba(0,0,0,${(el.shadowOpacity ?? 55) / 100}))`;
 
   if (preset.kind === 'overlay' && preset.overlay) {
-    const maskUrl = preset.screenMask;
     return (
-      <div className={`relative overflow-hidden ${preset.boxClass || 'h-[360px] w-[240px]'}`}>
-        {/* Screenshot clipped to the real transparent screen hole of the mockup */}
-        <div
-          className="absolute inset-0 z-0"
-          style={
-            maskUrl
-              ? {
-                  WebkitMaskImage: `url(${maskUrl})`,
-                  maskImage: `url(${maskUrl})`,
-                  WebkitMaskSize: '100% 100%',
-                  maskSize: '100% 100%',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                }
-              : undefined
-          }
-        >
-          <ScreenContent imageUrl={el.imageUrl} fill />
-        </div>
-        <img
-          src={preset.overlay}
-          alt={preset.label}
-          draggable={false}
-          className="pointer-events-none relative z-10 h-full w-full"
-          style={{ filter: shadow }}
-        />
-      </div>
+      <OverlayDeviceMockup
+        preset={preset}
+        imageUrl={el.imageUrl}
+        shadow={shadow}
+      />
     );
   }
 
@@ -988,6 +989,106 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
       <div className="absolute inset-[6px] overflow-hidden rounded-[20px] bg-black">
         <ScreenContent imageUrl={el.imageUrl} fill />
       </div>
+    </div>
+  );
+}
+
+function OverlayDeviceMockup({
+  preset,
+  imageUrl,
+  shadow,
+}: {
+  preset: DevicePreset;
+  imageUrl?: string;
+  shadow: string;
+}) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [boxSize, setBoxSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    const measure = () => {
+      const rect = node.getBoundingClientRect();
+      // Use layout size (unscaled) so matrix matches CSS % box
+      setBoxSize({ w: node.offsetWidth, h: node.offsetHeight });
+      void rect;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
+
+  const maskUrl = preset.screenMask;
+  const maskStyle: CSSProperties | undefined = maskUrl
+    ? {
+        WebkitMaskImage: `url(${maskUrl})`,
+        maskImage: `url(${maskUrl})`,
+        WebkitMaskSize: '100% 100%',
+        maskSize: '100% 100%',
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        maskPosition: 'center',
+        maskMode: 'alpha',
+      }
+    : undefined;
+
+  const quad = preset.screenQuad;
+  const canWarp = Boolean(imageUrl && quad && boxSize.w > 0 && boxSize.h > 0);
+  const transform =
+    canWarp && quad
+      ? matrix3dForQuad(boxSize.w, boxSize.h, quadToPixels(quad, boxSize.w, boxSize.h))
+      : undefined;
+
+  return (
+    <div
+      ref={boxRef}
+      className={`relative overflow-hidden ${preset.boxClass || 'h-[360px] w-[240px]'}`}
+    >
+      {/* Screenshot: perspective-warped into the glass, then clipped by screen alpha mask */}
+      <div className="absolute inset-0 z-0 overflow-hidden" style={maskStyle}>
+        {imageUrl ? (
+          canWarp ? (
+            <img
+              src={imageUrl}
+              alt=""
+              draggable={false}
+              className="pointer-events-none absolute left-0 top-0 origin-top-left"
+              style={{
+                width: boxSize.w,
+                height: boxSize.h,
+                objectFit: 'cover',
+                objectPosition: 'top center',
+                transform,
+                transformOrigin: '0 0',
+                willChange: 'transform',
+              }}
+            />
+          ) : (
+            <img
+              src={imageUrl}
+              alt=""
+              draggable={false}
+              className="h-full w-full object-cover object-top"
+            />
+          )
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900/90 p-4 text-center">
+            <ImageIcon className="h-7 w-7 text-cyan-400" />
+            <span className="text-[11px] font-bold text-cyan-100">Add screenshot</span>
+            <span className="text-[9px] text-slate-500">Select device → Upload in toolbar</span>
+          </div>
+        )}
+      </div>
+      <img
+        src={preset.overlay}
+        alt={preset.label}
+        draggable={false}
+        className="pointer-events-none relative z-10 h-full w-full select-none"
+        style={{ filter: shadow }}
+      />
     </div>
   );
 }
