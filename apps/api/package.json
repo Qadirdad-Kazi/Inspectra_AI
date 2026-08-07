@@ -60,6 +60,6 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-jwt": "^4.0.1",
     "eslint": "^9.27.0",
-    "vitest": "^3.1.4"
+    "vitest": "^4.1.10"
   }
 }
