@@ -16,11 +16,11 @@ export function FeatureLockModal({ reason, onUpgrade }: FeatureLockModalProps) {
       </div>
 
       <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-        ShotLuma Screenshot Studio <Sparkles className="h-5 w-5 text-amber-400" />
+        Inspectra Studio <Sparkles className="h-5 w-5 text-amber-400" />
       </h2>
 
       <p className="mt-2 max-w-md text-sm text-slate-300">
-        {reason || 'This premium visual asset builder requires the ShotLuma Studio Addon or an active Pro plan.'}
+        {reason || 'This premium visual asset builder requires the Inspectra Studio Addon or an active Pro plan.'}
       </p>
 
       <div className="my-6 grid w-full max-w-sm gap-2 text-left text-xs text-slate-300">
@@ -30,7 +30,7 @@ export function FeatureLockModal({ reason, onUpgrade }: FeatureLockModalProps) {
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-white/5 p-2.5">
           <CheckCircle2 className="h-4 w-4 text-teal-400 shrink-0" />
-          <span>iPhone 16 Pro, iPad Pro & Pixel 9 device frames</span>
+          <span>3D Tilted, Upright, Angle & Handheld device mockups</span>
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-white/5 p-2.5">
           <ShieldCheck className="h-4 w-4 text-indigo-400 shrink-0" />
@@ -43,7 +43,7 @@ export function FeatureLockModal({ reason, onUpgrade }: FeatureLockModalProps) {
           onClick={onUpgrade}
           className="flex-1 bg-gradient-to-r from-teal-500 to-indigo-600 text-white font-medium hover:from-teal-600 hover:to-indigo-700 border-0"
         >
-          Unlock Addon ($9.99/mo)
+          Unlock Inspectra Studio Addon ($9.99/mo)
         </Button>
       </div>
     </div>

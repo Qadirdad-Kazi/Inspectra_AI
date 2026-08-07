@@ -16,7 +16,7 @@ const DEFAULT_SLIDES: SlideData[] = [
     id: 'slide-1',
     headline: 'Inspectra Mobile Audit',
     subhead: 'Instant AI security scanning and performance audits across all platforms.',
-    frameType: 'iphone-16-pro',
+    frameType: 'iphone-17-a',
     backgroundColor: '#0f172a',
     gradientBackground: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
     textColor: '#ffffff',
@@ -26,7 +26,7 @@ const DEFAULT_SLIDES: SlideData[] = [
     id: 'slide-2',
     headline: 'Real-Time Threat Detection',
     subhead: 'Continuous compliance checks for OWASP and app store policies.',
-    frameType: 'iphone-16-pro',
+    frameType: 'iphone-17-a',
     backgroundColor: '#020617',
     gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
     textColor: '#ffffff',
@@ -36,7 +36,7 @@ const DEFAULT_SLIDES: SlideData[] = [
     id: 'slide-3',
     headline: 'One-Click AI Remediation',
     subhead: 'Generate fixes, marketing screenshot sets, and compliance reports instantly.',
-    frameType: 'iphone-16-pro',
+    frameType: 'iphone-17-a',
     backgroundColor: '#090d16',
     gradientBackground: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)',
     textColor: '#ffffff',
@@ -151,7 +151,7 @@ export default function ScreenshotStudioPage() {
           id: 'ai-1',
           headline: `${params.appName} — Next Gen App`,
           subhead: params.appDescription || 'Fast, secure, and built for maximum performance.',
-          frameType: 'iphone-16-pro',
+          frameType: 'iphone-17-a',
           backgroundColor: '#0f172a',
           gradientBackground: `linear-gradient(135deg, #0f172a 0%, ${params.primaryColor} 100%)`,
           textColor: '#ffffff',
@@ -161,7 +161,7 @@ export default function ScreenshotStudioPage() {
           id: 'ai-2',
           headline: 'Verified Security & Speed',
           subhead: 'Audited continuously with enterprise-grade encryption.',
-          frameType: 'iphone-16-pro',
+          frameType: 'iphone-17-a',
           backgroundColor: '#020617',
           gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
           textColor: '#ffffff',
@@ -171,7 +171,7 @@ export default function ScreenshotStudioPage() {
           id: 'ai-3',
           headline: 'Real-Time Sync Anywhere',
           subhead: 'Instant background updates across all your devices.',
-          frameType: 'iphone-16-pro',
+          frameType: 'iphone-17-a',
           backgroundColor: '#090d16',
           gradientBackground: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)',
           textColor: '#ffffff',
@@ -216,8 +216,8 @@ export default function ScreenshotStudioPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="ShotLuma Screenshot Studio"
-        description="Design, customize, and AI-synthesize App Store & Play Store graphic sets."
+        title="Inspectra Screenshot Studio"
+        description="Design, customize, and AI-synthesize App Store & Play Store graphic sets with 3D device mockups."
       />
 
       <StudioToolbar

@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 const nav = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/audits', label: 'Audits', icon: FileSearch },
-  { href: '/tools/screenshot-studio', label: 'ShotLuma Studio', icon: Sparkles },
+  { href: '/tools/screenshot-studio', label: 'Inspectra Studio', icon: Sparkles },
   { href: '/reports', label: 'Reports', icon: FileText },
   { href: '/automation', label: 'Automation', icon: Timer },
   { href: '/integrations', label: 'Integrations', icon: Cable },

@@ -2,7 +2,15 @@ export interface ScreenshotSlideSpec {
   id: string;
   headline: string;
   subhead: string;
-  frameType: 'iphone-16-pro' | 'ipad-pro' | 'pixel-9' | 'browser-window';
+  frameType:
+    | 'iphone-17-a'
+    | 'iphone-17-b'
+    | 'iphone-17-c'
+    | 'iphone-17-d'
+    | 'iphone-17-e'
+    | 'iphone-17-f'
+    | 'tilted-hand'
+    | 'browser-window';
   backgroundColor: string;
   gradientBackground?: string;
   textColor: string;
@@ -35,7 +43,7 @@ export function generateScreenshotSetSpecs(params: {
       id: 'slide-1',
       headline: `${appName} — Next-Gen Experience`,
       subhead: appDescription ? appDescription.slice(0, 70) : 'Fast, secure, and built for performance.',
-      frameType: targetPlatform === 'ios' ? 'iphone-16-pro' : 'pixel-9',
+      frameType: targetPlatform === 'ios' ? 'iphone-17-a' : 'iphone-17-b',
       backgroundColor: isDark ? '#0f172a' : '#ffffff',
       gradientBackground: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
       textColor: '#ffffff',
@@ -48,7 +56,7 @@ export function generateScreenshotSetSpecs(params: {
       subhead:
         (auditFindingsSummary && auditFindingsSummary[0]) ||
         'Enterprise-grade protection with full encryption.',
-      frameType: targetPlatform === 'ios' ? 'iphone-16-pro' : 'pixel-9',
+      frameType: targetPlatform === 'ios' ? 'iphone-17-c' : 'iphone-17-d',
       backgroundColor: isDark ? '#020617' : '#f8fafc',
       gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
       textColor: '#ffffff',
@@ -59,7 +67,7 @@ export function generateScreenshotSetSpecs(params: {
       id: 'slide-3',
       headline: 'Seamless Real-Time Sync',
       subhead: 'Instant updates across all your devices anywhere, anytime.',
-      frameType: targetPlatform === 'ios' ? 'iphone-16-pro' : 'pixel-9',
+      frameType: targetPlatform === 'ios' ? 'iphone-17-e' : 'tilted-hand',
       backgroundColor: isDark ? '#090d16' : '#f1f5f9',
       gradientBackground: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)',
       textColor: '#ffffff',
@@ -70,7 +78,7 @@ export function generateScreenshotSetSpecs(params: {
       id: 'slide-4',
       headline: 'Advanced Customization',
       subhead: 'Tailor controls, notifications, and settings to match your workflow.',
-      frameType: targetPlatform === 'ios' ? 'iphone-16-pro' : 'pixel-9',
+      frameType: targetPlatform === 'ios' ? 'iphone-17-f' : 'tilted-hand',
       backgroundColor: isDark ? '#0f172a' : '#ffffff',
       gradientBackground: 'linear-gradient(135deg, #111827 0%, #4c1d95 100%)',
       textColor: '#ffffff',
