@@ -77,6 +77,16 @@ export interface CanvasElement {
   iconId?: string;
   deviceStyle?: DeviceStyle;
   imageUrl?: string;
+  /** How the screenshot fills the device glass */
+  imageFit?: 'cover' | 'contain' | 'fill';
+  /** Zoom inside glass (50–200, default 100) */
+  imageZoom?: number;
+  /** Pan X/Y inside glass (−50…50) */
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  /** Extra horizontal/vertical stretch (50–200, default 100) */
+  imageStretchX?: number;
+  imageStretchY?: number;
   shadowOpacity?: number;
   zIndex?: number;
   rotation?: number;
@@ -609,6 +619,30 @@ export function StudioCanvas({
               onChangeShadowOpacity={(opacity) =>
                 updateElement(activeElement.id, { shadowOpacity: opacity })
               }
+              onChangeImageFit={(imageFit) => updateElement(activeElement.id, { imageFit })}
+              onChangeImageZoom={(imageZoom) => updateElement(activeElement.id, { imageZoom })}
+              onChangeImageOffsetX={(imageOffsetX) =>
+                updateElement(activeElement.id, { imageOffsetX })
+              }
+              onChangeImageOffsetY={(imageOffsetY) =>
+                updateElement(activeElement.id, { imageOffsetY })
+              }
+              onChangeImageStretchX={(imageStretchX) =>
+                updateElement(activeElement.id, { imageStretchX })
+              }
+              onChangeImageStretchY={(imageStretchY) =>
+                updateElement(activeElement.id, { imageStretchY })
+              }
+              onResetImageAdjust={() =>
+                updateElement(activeElement.id, {
+                  imageFit: 'cover',
+                  imageZoom: 100,
+                  imageOffsetX: 0,
+                  imageOffsetY: 0,
+                  imageStretchX: 100,
+                  imageStretchY: 100,
+                })
+              }
               onChangeText={(text) => updateElement(activeElement.id, { text })}
               onChangeFontSize={(fontSize) => updateElement(activeElement.id, { fontSize })}
               onChangeColor={(color) => updateElement(activeElement.id, { color })}
@@ -962,6 +996,12 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
         preset={preset}
         imageUrl={el.imageUrl}
         shadow={shadow}
+        imageFit={el.imageFit || 'cover'}
+        imageZoom={el.imageZoom ?? 100}
+        imageOffsetX={el.imageOffsetX ?? 0}
+        imageOffsetY={el.imageOffsetY ?? 0}
+        imageStretchX={el.imageStretchX ?? 100}
+        imageStretchY={el.imageStretchY ?? 100}
       />
     );
   }
@@ -975,7 +1015,17 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
           <span className="h-2 w-2 rounded-full bg-green-500" />
         </div>
         <div className="flex-1 overflow-hidden bg-slate-950">
-          <ScreenContent imageUrl={el.imageUrl} label="Upload web screenshot" fill />
+          <ScreenContent
+            imageUrl={el.imageUrl}
+            label="Upload web screenshot"
+            fill
+            imageFit={el.imageFit}
+            imageZoom={el.imageZoom}
+            imageOffsetX={el.imageOffsetX}
+            imageOffsetY={el.imageOffsetY}
+            imageStretchX={el.imageStretchX}
+            imageStretchY={el.imageStretchY}
+          />
         </div>
       </div>
     );
@@ -988,7 +1038,16 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
         style={{ filter: shadow }}
       >
         <div className="absolute inset-2 overflow-hidden rounded-[12px] bg-black">
-          <ScreenContent imageUrl={el.imageUrl} fill />
+          <ScreenContent
+            imageUrl={el.imageUrl}
+            fill
+            imageFit={el.imageFit}
+            imageZoom={el.imageZoom}
+            imageOffsetX={el.imageOffsetX}
+            imageOffsetY={el.imageOffsetY}
+            imageStretchX={el.imageStretchX}
+            imageStretchY={el.imageStretchY}
+          />
         </div>
       </div>
     );
@@ -999,7 +1058,16 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
       <div className="flex w-[320px] flex-col items-center" style={{ filter: shadow }}>
         <div className="w-full overflow-hidden rounded-t-lg border-[8px] border-b-0 border-zinc-700 bg-zinc-900">
           <div className="h-[190px] overflow-hidden bg-black">
-            <ScreenContent imageUrl={el.imageUrl} fill />
+            <ScreenContent
+              imageUrl={el.imageUrl}
+              fill
+              imageFit={el.imageFit}
+              imageZoom={el.imageZoom}
+              imageOffsetX={el.imageOffsetX}
+              imageOffsetY={el.imageOffsetY}
+              imageStretchX={el.imageStretchX}
+              imageStretchY={el.imageStretchY}
+            />
           </div>
         </div>
         <div className="h-2 w-[340px] rounded-b-md bg-zinc-600" />
@@ -1018,7 +1086,16 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
     >
       <div className="absolute left-1/2 top-2 z-20 h-1.5 w-16 -translate-x-1/2 rounded-full bg-zinc-700" />
       <div className="absolute inset-[6px] overflow-hidden rounded-[20px] bg-black">
-        <ScreenContent imageUrl={el.imageUrl} fill />
+        <ScreenContent
+          imageUrl={el.imageUrl}
+          fill
+          imageFit={el.imageFit}
+          imageZoom={el.imageZoom}
+          imageOffsetX={el.imageOffsetX}
+          imageOffsetY={el.imageOffsetY}
+          imageStretchX={el.imageStretchX}
+          imageStretchY={el.imageStretchY}
+        />
       </div>
     </div>
   );
@@ -1028,10 +1105,22 @@ function OverlayDeviceMockup({
   preset,
   imageUrl,
   shadow,
+  imageFit = 'cover',
+  imageZoom = 100,
+  imageOffsetX = 0,
+  imageOffsetY = 0,
+  imageStretchX = 100,
+  imageStretchY = 100,
 }: {
   preset: DevicePreset;
   imageUrl?: string;
   shadow: string;
+  imageFit?: 'cover' | 'contain' | 'fill';
+  imageZoom?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageStretchX?: number;
+  imageStretchY?: number;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [boxSize, setBoxSize] = useState({ w: 0, h: 0 });
@@ -1040,10 +1129,7 @@ function OverlayDeviceMockup({
     const node = boxRef.current;
     if (!node) return;
     const measure = () => {
-      const rect = node.getBoundingClientRect();
-      // Use layout size (unscaled) so matrix matches CSS % box
       setBoxSize({ w: node.offsetWidth, h: node.offsetHeight });
-      void rect;
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -1068,49 +1154,58 @@ function OverlayDeviceMockup({
 
   const quad = preset.screenQuad;
   const canWarp = Boolean(imageUrl && quad && boxSize.w > 0 && boxSize.h > 0);
-  const transform =
+  const warpTransform =
     canWarp && quad
       ? matrix3dForQuad(boxSize.w, boxSize.h, quadToPixels(quad, boxSize.w, boxSize.h))
       : undefined;
+
+  const sx = (imageStretchX / 100) * (imageZoom / 100);
+  const sy = (imageStretchY / 100) * (imageZoom / 100);
+  const posX = 50 + imageOffsetX;
+  const posY = 50 + imageOffsetY;
+
+  const screenshotInner = imageUrl ? (
+    <img
+      src={imageUrl}
+      alt=""
+      draggable={false}
+      className="pointer-events-none h-full w-full max-w-none"
+      style={{
+        objectFit: imageFit,
+        objectPosition: `${posX}% ${posY}%`,
+        transform: `scale(${sx}, ${sy})`,
+        transformOrigin: `${posX}% ${posY}%`,
+      }}
+    />
+  ) : (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900/90 p-4 text-center">
+      <ImageIcon className="h-7 w-7 text-cyan-400" />
+      <span className="text-[11px] font-bold text-cyan-100">Add screenshot</span>
+      <span className="text-[9px] text-slate-500">Select device → Upload in toolbar</span>
+    </div>
+  );
 
   return (
     <div
       ref={boxRef}
       className={`relative overflow-hidden ${preset.boxClass || 'h-[360px] w-[240px]'}`}
     >
-      {/* Screenshot: perspective-warped into the glass, then clipped by screen alpha mask */}
       <div className="absolute inset-0 z-0 overflow-hidden" style={maskStyle}>
-        {imageUrl ? (
-          canWarp ? (
-            <img
-              src={imageUrl}
-              alt=""
-              draggable={false}
-              className="pointer-events-none absolute left-0 top-0 origin-top-left"
-              style={{
-                width: boxSize.w,
-                height: boxSize.h,
-                objectFit: 'cover',
-                objectPosition: 'top center',
-                transform,
-                transformOrigin: '0 0',
-                willChange: 'transform',
-              }}
-            />
-          ) : (
-            <img
-              src={imageUrl}
-              alt=""
-              draggable={false}
-              className="h-full w-full object-cover object-top"
-            />
-          )
-        ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900/90 p-4 text-center">
-            <ImageIcon className="h-7 w-7 text-cyan-400" />
-            <span className="text-[11px] font-bold text-cyan-100">Add screenshot</span>
-            <span className="text-[9px] text-slate-500">Select device → Upload in toolbar</span>
+        {canWarp && warpTransform && warpTransform !== 'none' ? (
+          <div
+            className="pointer-events-none absolute left-0 top-0 origin-top-left overflow-hidden"
+            style={{
+              width: boxSize.w,
+              height: boxSize.h,
+              transform: warpTransform,
+              transformOrigin: '0 0',
+              willChange: 'transform',
+            }}
+          >
+            {screenshotInner}
           </div>
+        ) : (
+          <div className="h-full w-full overflow-hidden">{screenshotInner}</div>
         )}
       </div>
       <img
@@ -1128,18 +1223,40 @@ function ScreenContent({
   imageUrl,
   label,
   fill,
+  imageFit = 'cover',
+  imageZoom = 100,
+  imageOffsetX = 0,
+  imageOffsetY = 0,
+  imageStretchX = 100,
+  imageStretchY = 100,
 }: {
   imageUrl?: string;
   label?: string;
   fill?: boolean;
+  imageFit?: 'cover' | 'contain' | 'fill';
+  imageZoom?: number;
+  imageOffsetX?: number;
+  imageOffsetY?: number;
+  imageStretchX?: number;
+  imageStretchY?: number;
 }) {
   if (imageUrl) {
+    const sx = (imageStretchX / 100) * (imageZoom / 100);
+    const sy = (imageStretchY / 100) * (imageZoom / 100);
+    const posX = 50 + imageOffsetX;
+    const posY = 50 + imageOffsetY;
     return (
       <img
         src={imageUrl}
         alt=""
         draggable={false}
-        className={fill ? 'h-full w-full object-cover object-top' : 'h-full w-full object-cover'}
+        className={fill ? 'h-full w-full' : 'h-full w-full'}
+        style={{
+          objectFit: imageFit,
+          objectPosition: `${posX}% ${posY}%`,
+          transform: `scale(${sx}, ${sy})`,
+          transformOrigin: `${posX}% ${posY}%`,
+        }}
       />
     );
   }
