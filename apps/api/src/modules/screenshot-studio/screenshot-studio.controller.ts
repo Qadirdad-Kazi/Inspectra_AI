@@ -9,9 +9,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ScreenshotStudioService } from './screenshot-studio.service';
-import { CreateScreenshotProjectDto } from './dto/create-project.dto';
-import { UpdateScreenshotProjectDto } from './dto/update-project.dto';
-import { AiGenerateScreenshotsDto } from './dto/ai-generate.dto';
+import {
+  CreateScreenshotProjectDto,
+  UpdateScreenshotProjectDto,
+  AiGenerateScreenshotsDto,
+} from './dto/studio.dto';
 import { CurrentUser } from '../../common/decorators';
 import type { AuthPrincipal } from '../../common/types/auth.types';
 
@@ -31,7 +33,7 @@ export class ScreenshotStudioController {
   }
 
   @Post('projects')
-  @ApiOperation({ summary: 'Create a new ShotLuma screenshot project' })
+  @ApiOperation({ summary: 'Create a new screenshot studio project' })
   createProject(
     @Param('organizationId') orgId: string,
     @CurrentUser() user: AuthPrincipal,
@@ -41,7 +43,7 @@ export class ScreenshotStudioController {
   }
 
   @Get('projects')
-  @ApiOperation({ summary: 'List all screenshot projects in organization' })
+  @ApiOperation({ summary: 'List screenshot projects in organization' })
   listProjects(@Param('organizationId') orgId: string) {
     return this.service.listProjects(orgId);
   }
@@ -56,7 +58,7 @@ export class ScreenshotStudioController {
   }
 
   @Patch('projects/:projectId')
-  @ApiOperation({ summary: 'Update canvas configuration or details of a project' })
+  @ApiOperation({ summary: 'Update canvas configuration or project details' })
   updateProject(
     @Param('organizationId') orgId: string,
     @Param('projectId') projectId: string,
@@ -75,7 +77,7 @@ export class ScreenshotStudioController {
   }
 
   @Post('ai-generate')
-  @ApiOperation({ summary: 'Synthesize AI captions, layouts, and themes for app screenshots' })
+  @ApiOperation({ summary: 'Synthesize AI captions, layouts, and themes for screenshots' })
   generateAiScreenshots(@Body() dto: AiGenerateScreenshotsDto) {
     return this.service.generateAiScreenshots(dto);
   }

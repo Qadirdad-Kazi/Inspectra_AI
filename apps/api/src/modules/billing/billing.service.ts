@@ -12,15 +12,27 @@ import type {
   BillingPortalDto,
   CreateCheckoutSessionDto,
   CreatePackageCheckoutDto,
+  CreateStudioCheckoutDto,
   ListUsageQueryDto,
   UsageSummaryQueryDto,
 } from './dto/billing.dto';
 import { AUDIT_PACKAGES, getAuditPackage } from './packages';
+import {
+  STUDIO_PLANS,
+  getStudioPlan,
+  studioAccessDurationDays,
+  studioPlanPriceUsd,
+} from './studio-plans';
 import { isUnlimitedAuditEmail } from '../../common/utils/unlimited-access';
 
 type SettingsMeta = {
   auditCredits?: number;
   unlimitedAudits?: boolean;
+  screenshotStudio?: {
+    active?: boolean;
+    planId?: string;
+    expiresAt?: string | null;
+  };
 };
 
 @Injectable()
@@ -56,6 +68,155 @@ export class BillingService {
         subscription: false,
       })),
       note: 'One-time purchases. Credits never expire. No subscription.',
+    };
+  }
+
+  listStudioPlans() {
+    return {
+      data: STUDIO_PLANS.map((p) => ({
+        id: p.id,
+        name: p.name,
+        interval: p.interval,
+        durationDays: p.durationDays,
+        priceUsd: p.priceUsd,
+        pricePerDayUsd: p.pricePerDayUsd ?? null,
+        blurb: p.blurb,
+        highlighted: Boolean(p.highlighted),
+        minCustomDays: p.minCustomDays ?? null,
+        maxCustomDays: p.maxCustomDays ?? null,
+      })),
+      note: 'Inspectra Studio access — weekly, monthly, or custom day passes. Separate from audit credits.',
+    };
+  }
+
+  async grantStudioAccess(
+    organizationId: string,
+    planId: string,
+    durationDays: number,
+  ) {
+    const existing = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId },
+    });
+    const meta = { ...((existing?.metadata ?? {}) as SettingsMeta) };
+    const expiresAt = new Date(
+      Date.now() + durationDays * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    meta.screenshotStudio = {
+      active: true,
+      planId,
+      expiresAt,
+    };
+    await this.prisma.organizationSettings.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        metadata: meta as Prisma.InputJsonValue,
+      },
+      update: { metadata: meta as Prisma.InputJsonValue },
+    });
+    await this.prisma.notification.create({
+      data: {
+        organizationId,
+        channel: 'in_app',
+        status: 'sent',
+        title: 'Inspectra Studio unlocked',
+        body: `Plan ${planId} active until ${new Date(expiresAt).toLocaleString()}.`,
+        sentAt: new Date(),
+        dedupeKey: `studio:${organizationId}:${Date.now()}`,
+      },
+    });
+    return { planId, expiresAt, active: true };
+  }
+
+  /**
+   * Studio access checkout (weekly / monthly / custom day pass).
+   * Without Stripe: grants access immediately for local/dev.
+   */
+  async purchaseStudioPlan(organizationId: string, dto: CreateStudioCheckoutDto) {
+    const plan = getStudioPlan(dto.planId);
+    if (!plan) {
+      throw new NotFoundException({ code: 'STUDIO_PLAN_NOT_FOUND', message: 'Unknown Studio plan' });
+    }
+    const days = studioAccessDurationDays(plan, dto.customDays);
+    const priceUsd = studioPlanPriceUsd(plan, dto.customDays);
+
+    if (!this.stripe) {
+      const granted = await this.grantStudioAccess(organizationId, plan.id, days);
+      return {
+        mode: 'local_grant' as const,
+        planId: plan.id,
+        days,
+        expiresAt: granted.expiresAt,
+        url: null,
+        message: `Stripe not configured — Studio access granted for ${days} day(s).`,
+      };
+    }
+
+    const stripe = this.stripe;
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      include: { billingCustomer: true },
+    });
+
+    let customerId = org.billingCustomer?.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        name: org.name,
+        metadata: { organizationId },
+      });
+      customerId = customer.id;
+      await this.prisma.billingCustomer.create({
+        data: { organizationId, stripeCustomerId: customerId },
+      });
+    }
+
+    const envPrice =
+      plan.stripePriceEnv && process.env[plan.stripePriceEnv]
+        ? process.env[plan.stripePriceEnv]
+        : undefined;
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = envPrice
+      ? [{ price: envPrice, quantity: plan.interval === 'custom' ? days : 1 }]
+      : [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(priceUsd * 100),
+              product_data: {
+                name: `Inspectra Studio — ${plan.name}${plan.interval === 'custom' ? ` (${days}d)` : ''}`,
+                description: plan.blurb,
+              },
+            },
+          },
+        ];
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer: customerId,
+      success_url: dto.successUrl,
+      cancel_url: dto.cancelUrl,
+      line_items: lineItems,
+      metadata: {
+        organizationId,
+        planId: plan.id,
+        days: String(days),
+        kind: 'studio_plan',
+      },
+    });
+
+    if (!session.url) {
+      throw new BadRequestException({ code: 'CHECKOUT_FAILED', message: 'No checkout URL' });
+    }
+
+    return {
+      mode: 'stripe' as const,
+      planId: plan.id,
+      sessionId: session.id,
+      url: session.url,
+      days,
+      expiresAt: null,
+      message: null,
     };
   }
 
@@ -433,6 +594,20 @@ export class BillingService {
             `Purchased ${session.metadata.packageId ?? 'pack'}`,
           );
         }
+      }
+
+      if (
+        session.mode === 'payment' &&
+        session.metadata?.kind === 'studio_plan' &&
+        session.metadata.organizationId &&
+        session.metadata.planId &&
+        session.metadata.days
+      ) {
+        await this.grantStudioAccess(
+          session.metadata.organizationId,
+          session.metadata.planId,
+          Number(session.metadata.days) || 1,
+        );
       }
     }
 

@@ -10,7 +10,11 @@ export interface ScreenshotSlideSpec {
     | 'iphone-17-e'
     | 'iphone-17-f'
     | 'tilted-hand'
-    | 'browser-window';
+    | 'browser-window'
+    | 'android-pixel'
+    | 'android-slim'
+    | 'ipad-pro'
+    | 'macbook';
   backgroundColor: string;
   gradientBackground?: string;
   textColor: string;
@@ -24,6 +28,16 @@ export interface ScreenshotSetGenerationResult {
   colorPalette: string[];
 }
 
+function framesForPlatform(platform: string): ScreenshotSlideSpec['frameType'][] {
+  if (platform === 'android') {
+    return ['android-pixel', 'android-slim', 'android-pixel', 'tilted-hand'];
+  }
+  if (platform === 'web' || platform === 'msstore') {
+    return ['browser-window', 'macbook', 'ipad-pro', 'browser-window'];
+  }
+  return ['iphone-17-b', 'iphone-17-c', 'iphone-17-a', 'tilted-hand'];
+}
+
 export function generateScreenshotSetSpecs(params: {
   appName: string;
   appDescription?: string;
@@ -33,56 +47,63 @@ export function generateScreenshotSetSpecs(params: {
   auditFindingsSummary?: string[];
   rawImageCount?: number;
 }): ScreenshotSetGenerationResult {
-  const { appName, appDescription, targetPlatform, theme, primaryColor, auditFindingsSummary } = params;
+  const { appName, appDescription, targetPlatform, theme, primaryColor, auditFindingsSummary } =
+    params;
 
-  const mainColor = primaryColor || '#3b82f6';
+  const mainColor = primaryColor || '#22d3ee';
   const isDark = theme === 'dark' || theme === 'glassmorphism' || !theme;
+  const isMinimal = theme === 'minimal';
+  const frames = framesForPlatform(targetPlatform);
 
   const slides: ScreenshotSlideSpec[] = [
     {
       id: 'slide-1',
-      headline: `${appName} — Next-Gen Experience`,
-      subhead: appDescription ? appDescription.slice(0, 70) : 'Fast, secure, and built for performance.',
-      frameType: targetPlatform === 'ios' ? 'iphone-17-a' : 'iphone-17-b',
-      backgroundColor: isDark ? '#0f172a' : '#ffffff',
-      gradientBackground: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
-      textColor: '#ffffff',
-      badgeText: 'Featured',
+      headline: `${appName}`,
+      subhead: appDescription
+        ? appDescription.slice(0, 90)
+        : 'Fast, secure, and built for the way you work.',
+      frameType: frames[0]!,
+      backgroundColor: isMinimal ? '#f8fafc' : isDark ? '#0b1220' : '#ffffff',
+      gradientBackground: isMinimal
+        ? 'linear-gradient(160deg, #f8fafc 0%, #e2e8f0 100%)'
+        : 'linear-gradient(160deg, #0b1220 0%, #132033 50%, #1a2740 100%)',
+      textColor: isMinimal ? '#0f172a' : '#ffffff',
+      badgeText: 'New',
       rawImageIndex: 0,
     },
     {
       id: 'slide-2',
-      headline: 'Audited & Verified Security',
+      headline: 'Trusted security',
       subhead:
         (auditFindingsSummary && auditFindingsSummary[0]) ||
-        'Enterprise-grade protection with full encryption.',
-      frameType: targetPlatform === 'ios' ? 'iphone-17-c' : 'iphone-17-d',
+        'Enterprise-grade protection with clear audit trails.',
+      frameType: frames[1]!,
       backgroundColor: isDark ? '#020617' : '#f8fafc',
-      gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
+      gradientBackground: 'linear-gradient(160deg, #020617 0%, #0c1a3a 100%)',
       textColor: '#ffffff',
-      badgeText: '100% Compliant',
+      badgeText: 'Secure',
       rawImageIndex: 1,
     },
     {
       id: 'slide-3',
-      headline: 'Seamless Real-Time Sync',
-      subhead: 'Instant updates across all your devices anywhere, anytime.',
-      frameType: targetPlatform === 'ios' ? 'iphone-17-e' : 'tilted-hand',
+      headline: 'Real-time sync',
+      subhead: 'Stay updated across every device — instantly.',
+      frameType: frames[2]!,
       backgroundColor: isDark ? '#090d16' : '#f1f5f9',
-      gradientBackground: 'linear-gradient(135deg, #090d16 0%, #064e3b 100%)',
+      gradientBackground: 'linear-gradient(160deg, #090d16 0%, #064e3b 100%)',
       textColor: '#ffffff',
-      badgeText: 'Lightning Fast',
+      badgeText: 'Fast',
       rawImageIndex: 2,
     },
     {
       id: 'slide-4',
-      headline: 'Advanced Customization',
-      subhead: 'Tailor controls, notifications, and settings to match your workflow.',
-      frameType: targetPlatform === 'ios' ? 'iphone-17-f' : 'tilted-hand',
+      headline: 'Made for you',
+      subhead: 'Customize controls, alerts, and workflows in minutes.',
+      frameType: frames[3]!,
       backgroundColor: isDark ? '#0f172a' : '#ffffff',
-      gradientBackground: 'linear-gradient(135deg, #111827 0%, #4c1d95 100%)',
+      gradientBackground: 'linear-gradient(160deg, #111827 0%, #4c1d95 100%)',
       textColor: '#ffffff',
-      badgeText: 'Pro Features',
+      badgeText: 'Pro',
       rawImageIndex: 3,
     },
   ];

@@ -23,7 +23,7 @@ export function StudioToolbar({
   setProjectName,
 }: StudioToolbarProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/10 bg-slate-900/90 p-4 text-white backdrop-blur-md">
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-slate-950/80 p-4 text-white backdrop-blur-md">
       <div className="flex items-center gap-3">
         <input
           type="text"
@@ -36,7 +36,7 @@ export function StudioToolbar({
           <button
             onClick={() => setPlatform('ios')}
             className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
-              platform === 'ios' ? 'bg-teal-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+              platform === 'ios' ? 'bg-cyan-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Smartphone className="h-3.5 w-3.5" />
@@ -45,7 +45,7 @@ export function StudioToolbar({
           <button
             onClick={() => setPlatform('android')}
             className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
-              platform === 'android' ? 'bg-teal-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+              platform === 'android' ? 'bg-cyan-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Tablet className="h-3.5 w-3.5" />
@@ -54,7 +54,7 @@ export function StudioToolbar({
           <button
             onClick={() => setPlatform('web')}
             className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
-              platform === 'web' ? 'bg-teal-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+              platform === 'web' ? 'bg-cyan-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Monitor className="h-3.5 w-3.5" />
@@ -68,7 +68,7 @@ export function StudioToolbar({
           onClick={onOpenAiModal}
           variant="outline"
           size="sm"
-          className="border-teal-500/30 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 hover:text-teal-200 gap-1.5"
+          className="border-cyan-500/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 hover:text-cyan-100 gap-1.5"
         >
           <Sparkles className="h-4 w-4" />
           AI Copy & Layout Generator
@@ -77,7 +77,7 @@ export function StudioToolbar({
           onClick={onExport}
           disabled={isExporting}
           size="sm"
-          className="bg-teal-500 font-semibold text-slate-950 hover:bg-teal-400 gap-1.5"
+          className="bg-cyan-400 font-semibold text-slate-950 hover:bg-cyan-300 gap-1.5"
         >
           {isExporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           Export Store Set

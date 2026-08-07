@@ -108,6 +108,27 @@ export class CreatePackageCheckoutDto {
   cancelUrl!: string;
 }
 
+export class CreateStudioCheckoutDto {
+  @ApiProperty({ description: 'studio-weekly | studio-monthly | studio-custom' })
+  @IsString()
+  planId!: string;
+
+  @ApiPropertyOptional({ description: 'Days for studio-custom (1–14)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  customDays?: number;
+
+  @ApiProperty()
+  @IsUrl({ require_tld: false })
+  successUrl!: string;
+
+  @ApiProperty()
+  @IsUrl({ require_tld: false })
+  cancelUrl!: string;
+}
+
 export class EntitlementsResponseDto {
   @ApiProperty()
   plan!: string;

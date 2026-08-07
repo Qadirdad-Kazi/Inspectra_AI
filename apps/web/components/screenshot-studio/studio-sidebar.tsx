@@ -90,13 +90,22 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = [
     previewClass: 'from-lime-400 to-lime-500 text-slate-950',
   },
   {
-    id: 'warm-story',
-    name: 'Warm story',
-    subtitle: 'Color / lifestyle',
-    backgroundColor: '#f97316',
-    gradientBackground: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)',
+    id: 'ocean-glass',
+    name: 'Ocean glass',
+    subtitle: 'Cool / SaaS',
+    backgroundColor: '#0c4a6e',
+    gradientBackground: 'linear-gradient(160deg, #082f49 0%, #0e7490 100%)',
     textColor: '#ffffff',
-    previewClass: 'from-orange-400 to-orange-600',
+    previewClass: 'from-sky-950 to-cyan-700',
+  },
+  {
+    id: 'noir-gold',
+    name: 'Noir gold',
+    subtitle: 'Luxury / dark',
+    backgroundColor: '#18181b',
+    gradientBackground: 'linear-gradient(160deg, #09090b 0%, #422006 100%)',
+    textColor: '#fef3c7',
+    previewClass: 'from-zinc-950 to-amber-950 text-amber-100',
   },
 ];
 

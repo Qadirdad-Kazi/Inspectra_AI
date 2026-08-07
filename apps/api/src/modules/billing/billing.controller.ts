@@ -9,6 +9,7 @@ import {
   CheckoutSessionResponseDto,
   CreateCheckoutSessionDto,
   CreatePackageCheckoutDto,
+  CreateStudioCheckoutDto,
   EntitlementsResponseDto,
   ListUsageQueryDto,
   SubscriptionResponseDto,
@@ -31,6 +32,13 @@ export class BillingController {
     return this.billingService.listPackages();
   }
 
+  @Public()
+  @Get('billing/studio-plans')
+  @ApiOperation({ summary: 'List Inspectra Studio access plans (weekly / monthly / custom)' })
+  listStudioPlans() {
+    return this.billingService.listStudioPlans();
+  }
+
   @ApiBearerAuth()
   @Post('organizations/:organizationId/billing/packages/checkout')
   @Roles('owner')
@@ -40,6 +48,17 @@ export class BillingController {
     @Body() dto: CreatePackageCheckoutDto,
   ) {
     return this.billingService.purchasePackage(organizationId, dto);
+  }
+
+  @ApiBearerAuth()
+  @Post('organizations/:organizationId/billing/studio/checkout')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Buy Inspectra Studio access (weekly / monthly / custom days)' })
+  purchaseStudio(
+    @Param('organizationId') organizationId: string,
+    @Body() dto: CreateStudioCheckoutDto,
+  ) {
+    return this.billingService.purchaseStudioPlan(organizationId, dto);
   }
 
   @ApiBearerAuth()
