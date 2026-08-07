@@ -1,6 +1,6 @@
 'use client';
 
-import { Upload, Type, Image as ImageIcon, Sparkles, Move, Trash2 } from 'lucide-react';
+import { Upload, Type, Image as ImageIcon } from 'lucide-react';
 
 export interface SlideData {
   id: string;
@@ -22,14 +22,23 @@ interface StudioCanvasProps {
   platform: 'ios' | 'android' | 'msstore' | 'web';
 }
 
+const FALLBACK_SLIDE: SlideData = {
+  id: 'fallback',
+  headline: 'Headline',
+  subhead: 'Subhead',
+  frameType: 'iphone-16-pro',
+  backgroundColor: '#0f172a',
+  textColor: '#ffffff',
+};
+
 export function StudioCanvas({
   slides,
   activeSlideIndex,
   setActiveSlideIndex,
   updateSlide,
-  platform,
+  platform: _platform,
 }: StudioCanvasProps) {
-  const currentSlide = slides[activeSlideIndex] || slides[0];
+  const currentSlide = slides[activeSlideIndex] ?? slides[0] ?? FALLBACK_SLIDE;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
     const file = e.target.files?.[0];

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Prisma } from '@inspectra/db';
 import { CreateScreenshotProjectDto } from './dto/create-project.dto';
 import { UpdateScreenshotProjectDto } from './dto/update-project.dto';
 import { AiGenerateScreenshotsDto } from './dto/ai-generate.dto';
@@ -79,8 +80,8 @@ export class ScreenshotStudioService {
         name: dto.name,
         assetId: dto.assetId || null,
         platform: dto.platform || 'ios',
-        canvasConfig: (dto.canvasConfig as Record<string, unknown>) || {},
-        exportSettings: (dto.exportSettings as Record<string, unknown>) || {},
+        canvasConfig: (dto.canvasConfig as Prisma.InputJsonValue) || {},
+        exportSettings: (dto.exportSettings as Prisma.InputJsonValue) || {},
       },
     });
   }
@@ -122,8 +123,8 @@ export class ScreenshotStudioService {
       data: {
         ...(dto.name && { name: dto.name }),
         ...(dto.platform && { platform: dto.platform }),
-        ...(dto.canvasConfig && { canvasConfig: dto.canvasConfig as Record<string, unknown> }),
-        ...(dto.exportSettings && { exportSettings: dto.exportSettings as Record<string, unknown> }),
+        ...(dto.canvasConfig && { canvasConfig: dto.canvasConfig as Prisma.InputJsonValue }),
+        ...(dto.exportSettings && { exportSettings: dto.exportSettings as Prisma.InputJsonValue }),
       },
     });
   }

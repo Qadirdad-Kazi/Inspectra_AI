@@ -5,10 +5,10 @@ import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/components/providers/auth-provider';
 import { API_URL, getAccessToken } from '@/lib/api';
 import { StudioToolbar } from '@/components/screenshot-studio/studio-toolbar';
-import { StudioCanvas, SlideData } from '@/components/screenshot-studio/studio-canvas';
+import { StudioCanvas, type SlideData } from '@/components/screenshot-studio/studio-canvas';
 import { StudioAiPanel } from '@/components/screenshot-studio/studio-ai-panel';
 import { FeatureLockModal } from '@/components/screenshot-studio/feature-lock-modal';
-import { Sparkles, CheckCircle, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const DEFAULT_SLIDES: SlideData[] = [
@@ -91,7 +91,7 @@ export default function ScreenshotStudioPage() {
             hasAccess: user?.isPlatformAdmin ?? true,
           });
         }
-      } catch (err) {
+      } catch {
         setEntitlement({
           loading: false,
           hasAccess: user?.isPlatformAdmin ?? true,
@@ -105,7 +105,10 @@ export default function ScreenshotStudioPage() {
   const updateSlide = (idx: number, patch: Partial<SlideData>) => {
     setSlides((prev) => {
       const copy = [...prev];
-      copy[idx] = { ...copy[idx], ...patch };
+      const target = copy[idx];
+      if (target) {
+        copy[idx] = { ...target, ...patch };
+      }
       return copy;
     });
   };
@@ -176,7 +179,7 @@ export default function ScreenshotStudioPage() {
         },
       ]);
       toast.success('Generated AI screenshot set specs!');
-    } catch (err) {
+    } catch {
       toast.error('Failed to call AI generator, applying fallback theme.');
     }
   };

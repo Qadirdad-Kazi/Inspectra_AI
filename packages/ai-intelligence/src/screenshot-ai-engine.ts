@@ -45,9 +45,9 @@ export function generateScreenshotSetSpecs(params: {
     {
       id: 'slide-2',
       headline: 'Audited & Verified Security',
-      subhead: auditFindingsSummary && auditFindingsSummary.length > 0
-        ? auditFindingsSummary[0]
-        : 'Enterprise-grade protection with full encryption.',
+      subhead:
+        (auditFindingsSummary && auditFindingsSummary[0]) ||
+        'Enterprise-grade protection with full encryption.',
       frameType: targetPlatform === 'ios' ? 'iphone-16-pro' : 'pixel-9',
       backgroundColor: isDark ? '#020617' : '#f8fafc',
       gradientBackground: 'linear-gradient(135deg, #020617 0%, #172554 100%)',
