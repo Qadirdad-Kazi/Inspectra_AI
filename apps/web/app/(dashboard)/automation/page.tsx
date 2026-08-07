@@ -104,13 +104,13 @@ export default function AutomationPage() {
           </p>
         </div>
         <Button variant="outline" onClick={() => void dispatchDue()}>
-          Run due now
+          Run Due Now
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>New schedule</CardTitle>
+          <CardTitle>New Schedule</CardTitle>
           <CardDescription>Minimum interval 60 minutes.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,7 +145,7 @@ export default function AutomationPage() {
               </select>
             </div>
             <div>
-              <Button type="submit">Create schedule</Button>
+              <Button type="submit">Create Schedule</Button>
             </div>
           </form>
         </CardContent>

@@ -173,7 +173,7 @@ export default function IntegrationsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Project key</Label>
+              <Label>Project Key</Label>
               <Input
                 value={jira.projectKey}
                 onChange={(e) => setJira({ ...jira, projectKey: e.target.value })}

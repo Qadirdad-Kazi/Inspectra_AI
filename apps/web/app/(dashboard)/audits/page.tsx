@@ -149,9 +149,13 @@ function AuditsInner() {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted">
-            Prefer the paste bar above. For walkthroughs without a live run, open{' '}
-            <Link href="/demo" className="font-medium text-teal-800 hover:underline">
-              sample demos
+            Prefer the paste bar above. When a store listing audit flags weak screenshots, fix them
+            in{' '}
+            <Link
+              href="/tools/screenshot-studio"
+              className="font-medium text-teal-800 hover:underline"
+            >
+              Inspectra Studio
             </Link>
             .
           </CardContent>

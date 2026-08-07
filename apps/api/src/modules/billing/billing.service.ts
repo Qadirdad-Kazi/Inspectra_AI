@@ -55,6 +55,12 @@ export class BillingService {
     return this.stripe;
   }
 
+  /** Local free grants only for non-prod, or when explicitly enabled. Never in production by default. */
+  private allowLocalBillingGrants(): boolean {
+    if (process.env.ALLOW_LOCAL_BILLING_GRANTS === 'true') return true;
+    return process.env.NODE_ENV !== 'production';
+  }
+
   listPackages() {
     return {
       data: AUDIT_PACKAGES.map((p) => ({
@@ -141,6 +147,12 @@ export class BillingService {
     const priceUsd = studioPlanPriceUsd(plan, dto.customDays);
 
     if (!this.stripe) {
+      if (!this.allowLocalBillingGrants()) {
+        throw new ServiceUnavailableException({
+          code: 'STRIPE_NOT_CONFIGURED',
+          message: 'Payments are not configured. Studio packages cannot be purchased right now.',
+        });
+      }
       const granted = await this.grantStudioAccess(organizationId, plan.id, days);
       return {
         mode: 'local_grant' as const,
@@ -148,7 +160,7 @@ export class BillingService {
         days,
         expiresAt: granted.expiresAt,
         url: null,
-        message: `Stripe not configured — Studio access granted for ${days} day(s).`,
+        message: `Stripe not configured — Studio access granted for ${days} day(s) (dev only).`,
       };
     }
 
@@ -284,7 +296,8 @@ export class BillingService {
     if (credits < 1) {
       throw new BadRequestException({
         code: 'NO_AUDIT_CREDITS',
-        message: 'No audit credits left. Your free starter credit is used — buy a one-time package on Packages, or browse sample demos.',
+        message:
+          'No audit credits left. Buy a one-time package on Packages, then run another audit.',
       });
     }
     meta.auditCredits = credits - 1;
@@ -297,6 +310,28 @@ export class BillingService {
       update: { metadata: meta as Prisma.InputJsonValue },
     });
     return { auditCredits: meta.auditCredits, unlimited: false as const, freeTrial: false as const };
+  }
+
+  /** Restore one credit after a failed or cancelled audit (no-op if unlimited). */
+  async refundAuditCredit(organizationId: string, userId?: string) {
+    if (userId && (await this.userHasUnlimitedAudits(userId))) {
+      return { auditCredits: null as number | null, refunded: false as const };
+    }
+    const existing = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId },
+    });
+    const meta = { ...((existing?.metadata ?? {}) as SettingsMeta) };
+    const next = Number(meta.auditCredits ?? 0) + 1;
+    meta.auditCredits = next;
+    await this.prisma.organizationSettings.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        metadata: meta as Prisma.InputJsonValue,
+      },
+      update: { metadata: meta as Prisma.InputJsonValue },
+    });
+    return { auditCredits: next, refunded: true as const };
   }
 
   async getSubscription(organizationId: string) {
@@ -377,6 +412,12 @@ export class BillingService {
     }
 
     if (!this.stripe) {
+      if (!this.allowLocalBillingGrants()) {
+        throw new ServiceUnavailableException({
+          code: 'STRIPE_NOT_CONFIGURED',
+          message: 'Payments are not configured. Audit packages cannot be purchased right now.',
+        });
+      }
       const balance = await this.grantAuditCredits(
         organizationId,
         pack.audits,
@@ -388,7 +429,7 @@ export class BillingService {
         auditsGranted: pack.audits,
         auditCredits: balance.auditCredits,
         url: null,
-        message: 'Stripe not configured — credits granted locally for testing.',
+        message: 'Stripe not configured — credits granted locally for testing (dev only).',
       };
     }
 

@@ -1,10 +1,6 @@
-import ComingSoonPage from '@/components/placeholders/coming-soon';
+import { redirect } from 'next/navigation';
 
+/** Legacy placeholder route — assets are created from the audit paste bar. */
 export default function AssetsPlaceholderPage() {
-  return (
-    <ComingSoonPage
-      title="Assets"
-      description="Register websites, apps, APIs, extensions, and SaaS targets here."
-    />
-  );
+  redirect('/audits');
 }

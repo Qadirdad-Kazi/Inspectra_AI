@@ -163,8 +163,10 @@ export class OrganizationsService {
       role: invitation.role,
       status: invitation.status,
       expiresAt: invitation.expiresAt.toISOString(),
-      // Returned once for local/dev delivery; production would email this.
-      acceptToken: token,
+      // Dev/local only — production should email the accept link (never toast the token).
+      ...(process.env.NODE_ENV !== 'production'
+        ? { acceptToken: token }
+        : {}),
     };
   }
 

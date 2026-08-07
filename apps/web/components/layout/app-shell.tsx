@@ -27,7 +27,7 @@ const nav = [
   { href: '/reports', label: 'Reports', icon: FileText },
   { href: '/automation', label: 'Automation', icon: Timer },
   { href: '/integrations', label: 'Integrations', icon: Cable },
-  { href: '/api-keys', label: 'API keys', icon: KeyRound },
+  { href: '/api-keys', label: 'API Keys', icon: KeyRound },
   { href: '/notifications', label: 'Inbox', icon: Bell },
   { href: '/billing', label: 'Packages', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
@@ -111,12 +111,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-white/10 p-4">
-          <Link
-            href="/demo"
-            className="mb-3 block rounded-md px-2 py-1.5 text-xs text-sidebar-muted hover:bg-white/5 hover:text-white"
-          >
-            Sample demos →
-          </Link>
           <div className="mb-3 truncate text-sm">
             <div className="font-medium text-white">{user.name || 'User'}</div>
             <div className="truncate text-xs text-sidebar-muted">{user.email}</div>
@@ -128,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             onClick={() => void signOut().then(() => router.push('/sign-in'))}
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            Sign Out
           </Button>
         </div>
       </aside>

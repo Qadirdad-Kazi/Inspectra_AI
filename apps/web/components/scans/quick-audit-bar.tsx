@@ -123,7 +123,7 @@ export function QuickAuditBar({
         disabled={loading}
         className="shrink-0 sm:min-w-[160px]"
       >
-        {loading ? 'Starting…' : 'Run audit'}
+        {loading ? 'Starting…' : 'Run Audit'}
       </Button>
     </form>
   );

@@ -52,7 +52,7 @@ export default function NotificationsPage() {
           <p className="text-muted">In-app alerts for invites, billing, and system events.</p>
         </div>
         <Button variant="outline" onClick={() => void markAllRead()}>
-          Mark all read
+          Mark All Read
         </Button>
       </div>
       <div className="space-y-3">

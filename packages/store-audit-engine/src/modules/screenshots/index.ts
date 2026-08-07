@@ -49,23 +49,20 @@ export const screenshotsModule: StoreModule = {
     const visionEnabled = observations.some((o) => o.source === 'vision-llm');
     if (!visionEnabled) {
       const err =
-        observations.map((o) => o.error).find(Boolean) ??
-        'no LLM vision provider configured';
+        observations.map((o) => o.error).find(Boolean) ?? 'vision unavailable';
       const looksUnconfigured = /LLM unavailable|not configured/i.test(err);
-      findings.push({
-        fingerprint: fingerprint(['shot', 'vision-off', listing.storeId]),
-        title: looksUnconfigured
-          ? 'AI vision not enabled for creative review'
-          : 'AI vision call failed for screenshots',
-        description: looksUnconfigured
-          ? 'Screenshot URLs were found, but no LLM vision provider is configured on the API. Quality notes are heuristic only.'
-          : `Screenshot URLs were found, but vision analysis failed (${err}). Quality notes are heuristic only.`,
-        severity: 'info',
-        category: 'screenshots',
-        remediation: looksUnconfigured
-          ? 'On the Render API service set OPENROUTER_API_KEY (or GEMINI/OPENAI), AI_DEFAULT_PROVIDER=auto (or openrouter), and ensure AI_PROVIDER is not stub. Re-deploy, then re-run the audit.'
-          : 'Check Render API logs for [store-vision] errors. Confirm the vision model exists on your provider and credits are available, then re-run.',
-      });
+      // Customer-facing only — never leak env keys / deploy runbooks into reports.
+      if (!looksUnconfigured) {
+        findings.push({
+          fingerprint: fingerprint(['shot', 'vision-off', listing.storeId]),
+          title: 'AI creative review unavailable',
+          description:
+            'Screenshots were found, but automated visual review could not complete. Creative scores use listing heuristics only.',
+          severity: 'info',
+          category: 'screenshots',
+          remediation: 'Re-run the audit later. If this keeps happening, contact support.',
+        });
+      }
     }
 
     const avgQuality =

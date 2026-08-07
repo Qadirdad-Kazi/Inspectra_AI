@@ -47,7 +47,8 @@ export default function SignUpPage() {
         <CardHeader>
           <CardTitle>Create your workspace</CardTitle>
           <CardDescription>
-            Includes 1 free live audit. Browse sample demos anytime — no card required to start.
+            Includes 1 free live audit. After signup you can also open Inspectra Studio for
+            store screenshot creatives — no card required to start.
           </CardDescription>
         </CardHeader>
         <CardContent>

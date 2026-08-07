@@ -59,8 +59,15 @@ export function FeatureLockModal({ reason, buyingPlanId, onPurchase }: FeatureLo
             >
               <div className="mb-2 flex items-center gap-2 text-cyan-300">
                 <Icon className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">{plan.name}</span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {plan.interval === 'week'
+                    ? 'Weekly'
+                    : plan.interval === 'month'
+                      ? 'Monthly'
+                      : 'Custom'}
+                </span>
               </div>
+              <div className="mb-1 text-sm font-semibold text-white">{plan.name}</div>
               <div className="text-2xl font-bold text-white">{formatUsd(price)}</div>
               <p className="mt-1 min-h-[40px] text-xs text-slate-400">{plan.blurb}</p>
               {plan.interval === 'custom' ? (

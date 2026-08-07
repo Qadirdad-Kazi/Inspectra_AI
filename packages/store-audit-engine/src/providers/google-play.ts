@@ -185,20 +185,9 @@ export const googlePlayProvider: StoreProvider = {
     } satisfies StoreListing;
   },
 
-  async fetchReviews({ storeId, limit }) {
-    // Public HTML does not expose a stable reviews API; return structured placeholder
-    // derived from listing rating distribution when possible.
-    const listing = await this.fetchListing({ storeId });
-    const synthetic: StoreReview[] = [];
-    const base = listing.rating ?? 4;
-    for (let i = 0; i < Math.min(limit, 8); i++) {
-      synthetic.push({
-        id: `gp-synth-${storeId}-${i}`,
-        rating: Math.max(1, Math.min(5, Math.round(base + (i % 3) - 1))),
-        text: `Synthetic review sample ${i + 1} for ASO/review intelligence (Play HTML has no public review feed).`,
-        author: `user${i + 1}`,
-      });
-    }
-    return synthetic;
+  async fetchReviews() {
+    // Play public HTML has no stable review feed — never invent reviews.
+    // Review module falls back to aggregate listing rating only.
+    return [] as StoreReview[];
   },
 };

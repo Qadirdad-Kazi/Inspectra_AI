@@ -1,10 +1,6 @@
-import ComingSoonPage from '@/components/placeholders/coming-soon';
+import { redirect } from 'next/navigation';
 
+/** Legacy placeholder route — audits are live; send users to the real product. */
 export default function ProjectsPlaceholderPage() {
-  return (
-    <ComingSoonPage
-      title="Projects"
-      description="Workspaces and project grouping for audits."
-    />
-  );
+  redirect('/audits');
 }

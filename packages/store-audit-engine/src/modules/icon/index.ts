@@ -32,22 +32,20 @@ export const iconModule: StoreModule = {
 
     const observation = await observeIcon(listing.iconUrl);
     if (observation.source !== 'vision-llm') {
-      const err = observation.error ?? 'no LLM vision provider configured';
+      const err = observation.error ?? 'vision unavailable';
       const looksUnconfigured = /LLM unavailable|not configured/i.test(err);
-      findings.push({
-        fingerprint: fingerprint(['icon', 'vision-off', listing.storeId]),
-        title: looksUnconfigured
-          ? 'AI vision not enabled for icon review'
-          : 'AI vision call failed for icon',
-        description: looksUnconfigured
-          ? 'Icon URL resolved, but no LLM vision provider is configured on the API. Scores are heuristic only.'
-          : `Icon URL resolved, but vision analysis failed (${err}). Scores are heuristic only.`,
-        severity: 'info',
-        category: 'icon',
-        remediation: looksUnconfigured
-          ? 'On the Render API service set OPENROUTER_API_KEY (or GEMINI/OPENAI), AI_DEFAULT_PROVIDER=auto (or openrouter), and ensure AI_PROVIDER is not stub. Re-deploy, then re-run.'
-          : 'Check Render API logs for [store-vision] errors, verify model + credits, then re-run.',
-      });
+      // Customer-facing only — never leak env keys / deploy runbooks into reports.
+      if (!looksUnconfigured) {
+        findings.push({
+          fingerprint: fingerprint(['icon', 'vision-off', listing.storeId]),
+          title: 'AI icon review unavailable',
+          description:
+            'Icon was found, but automated visual review could not complete. Icon scores use listing heuristics only.',
+          severity: 'info',
+          category: 'icon',
+          remediation: 'Re-run the audit later. If this keeps happening, contact support.',
+        });
+      }
     }
 
     if (observation.source === 'vision-llm' && observation.qualityScore < 50) {

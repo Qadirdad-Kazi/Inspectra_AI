@@ -79,8 +79,8 @@ export default function SettingsPage() {
       );
       toast.success(
         invitation.acceptToken
-          ? `Invited. Dev token: ${invitation.acceptToken}`
-          : 'Invitation sent',
+          ? `Invited (dev). Accept token: ${invitation.acceptToken}`
+          : 'Invitation created. Share the email invite when mail delivery is configured.',
       );
       setInviteEmail('');
     } catch (err) {
@@ -116,7 +116,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Members</CardTitle>
-          <CardDescription>Roles: owner, admin, analyst, viewer</CardDescription>
+          <CardDescription>Roles: Owner, Admin, Analyst, Viewer</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <ul className="space-y-2">

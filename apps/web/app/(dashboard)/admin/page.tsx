@@ -67,7 +67,7 @@ export default function AdminPage() {
         {[
           ['Users', stats?.users],
           ['Organizations', stats?.organizations],
-          ['Active subs', stats?.activeSubscriptions],
+          ['Active Subs', stats?.activeSubscriptions],
           ['Notifications', stats?.notifications],
         ].map(([label, value]) => (
           <Card key={label as string}>

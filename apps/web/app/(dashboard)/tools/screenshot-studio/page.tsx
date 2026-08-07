@@ -28,7 +28,7 @@ import {
 import { useHistoryState } from '@/components/screenshot-studio/use-history-state';
 import {
   PLATFORM_EXPORT_SIZE,
-  PREVIEW_ARTBOARD,
+  previewArtboardSize,
   fileToDataUrl,
   persistableScreens,
   slugify,
@@ -152,7 +152,7 @@ function ScreenshotStudioInner() {
   const { user, activeOrgId } = useAuth();
   const searchParams = useSearchParams();
   const [platform, setPlatform] = useState<StudioPlatform>('ios');
-  const [projectName, setProjectName] = useState('Inspectra Launch Set');
+  const [projectName, setProjectName] = useState('Untitled project');
   const [projectId, setProjectId] = useState<string | null>(null);
 
   const {
@@ -590,11 +590,11 @@ function ScreenshotStudioInner() {
       setSelectedElementId(null);
       setProjectName(params.appName || projectName);
       toast.success(
-        data.auditSafe
-          ? data.generatedBy === 'llm'
-            ? `Audit-safe set applied · ${data.slides.length} store frames (LLM copy)`
-            : `Audit-safe set applied · ${data.slides.length} store frames`
-          : 'AI layout applied',
+        data.generatedBy === 'llm'
+          ? `Layout + LLM copy applied · ${data.slides.length} frames`
+          : data.generatedBy === 'hybrid'
+            ? `Layout + draft copy applied · ${data.slides.length} frames`
+            : `Template layout applied (AI offline) · ${data.slides.length} frames — review copy before publishing`,
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'AI generate failed');
@@ -634,7 +634,7 @@ function ScreenshotStudioInner() {
       if (projectId === id) {
         setProjectId(null);
         replaceScreens(INITIAL_SCREENS);
-        setProjectName('Inspectra Launch Set');
+        setProjectName('Untitled project');
         setActiveScreenIndex(0);
       }
       toast.success('Project deleted');
@@ -647,13 +647,23 @@ function ScreenshotStudioInner() {
   const handleNewProject = () => {
     setProjectId(null);
     replaceScreens(INITIAL_SCREENS);
-    setProjectName('Inspectra Launch Set');
+    setProjectName('Untitled project');
     setActiveScreenIndex(0);
     setSelectedElementId(null);
     toast.message('New blank project');
   };
 
   const handleExport = async () => {
+    const devicesMissingShot = screens.flatMap((s) =>
+      s.elements.filter((el) => el.type === 'device' && !el.imageUrl),
+    );
+    if (devicesMissingShot.length > 0) {
+      toast.error(
+        `Upload screenshots into ${devicesMissingShot.length} device frame(s) before exporting. Empty “Add screenshot” frames are not store-ready.`,
+      );
+      return;
+    }
+
     setIsExporting(true);
     setSelectedElementId(null);
     try {
@@ -664,7 +674,8 @@ function ScreenshotStudioInner() {
         return;
       }
       const sized = PLATFORM_EXPORT_SIZE[platform];
-      const pixelRatio = sized.width / PREVIEW_ARTBOARD.width;
+      const preview = previewArtboardSize(platform);
+      const pixelRatio = sized.width / preview.width;
       const base = slugify(projectName);
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i]!;

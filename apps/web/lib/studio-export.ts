@@ -12,7 +12,18 @@ export const PLATFORM_EXPORT_SIZE: Record<
   web: { width: 1366, height: 768, label: 'Web (1366×768)' },
 };
 
-/** Preview artboard size used in the editor (CSS px). */
+/** Preview artboard CSS size matching a platform's export aspect ratio. */
+export function previewArtboardSize(platform: StudioPlatform): {
+  width: number;
+  height: number;
+} {
+  const sized = PLATFORM_EXPORT_SIZE[platform];
+  const width = 360;
+  const height = Math.max(1, Math.round((width * sized.height) / sized.width));
+  return { width, height };
+}
+
+/** Preview artboard size used in the editor (CSS px). Prefer previewArtboardSize(platform). */
 export const PREVIEW_ARTBOARD = { width: 360, height: 680 };
 
 export function fileToDataUrl(file: File, maxEdge = 1600, quality = 0.82): Promise<string> {

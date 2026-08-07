@@ -44,7 +44,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted">
-          Historical analytics for {org?.name ?? 'your organization'}
+          Historical Analytics for {org?.name ?? 'your organization'}
           {data ? ` · last ${data.windowDays} days` : ''}.
         </p>
       </div>
@@ -58,7 +58,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Avg score</CardDescription>
+            <CardDescription>Avg Score</CardDescription>
             <CardTitle className="text-3xl tabular-nums">
               {data?.totals.averageScore ?? '—'}
             </CardTitle>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Reports ready</CardDescription>
+            <CardDescription>Reports Ready</CardDescription>
             <CardTitle className="text-3xl tabular-nums">
               {data?.totals.reportsReady ?? '—'}
             </CardTitle>
@@ -74,7 +74,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Active schedules</CardDescription>
+            <CardDescription>Active Schedules</CardDescription>
             <CardTitle className="text-3xl tabular-nums">
               {data?.totals.schedulesActive ?? '—'}
             </CardTitle>
@@ -85,8 +85,8 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Score trend</CardTitle>
-            <CardDescription>Daily average overall score</CardDescription>
+            <CardTitle>Score Trend</CardTitle>
+            <CardDescription>Daily Average Overall Score</CardDescription>
           </CardHeader>
           <CardContent>
             {!data?.scoreTrend.length ? (
@@ -109,8 +109,8 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent scores</CardTitle>
-            <CardDescription>Latest audit outcomes</CardDescription>
+            <CardTitle>Recent Scores</CardTitle>
+            <CardDescription>Latest Audit Outcomes</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {(data?.recentScores ?? []).map((r) => (
@@ -133,12 +133,36 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      <Card className="border-cyan-800/20 bg-gradient-to-br from-cyan-50/80 to-white">
+        <CardHeader className="pb-2">
+          <CardDescription className="text-cyan-900/80">New · Screenshot Studio</CardDescription>
+          <CardTitle className="text-lg">Inspectra Studio</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-end justify-between gap-4">
+          <p className="max-w-xl text-sm text-muted">
+            Build App Store, Play Store, and web screenshot creatives — mockups, AI copy, and
+            store-size exports. Separate packages from audit credits.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/tools/screenshot-studio">Open Studio</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/billing#studio-packages">Studio Packages</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <Link href="/audits">Start audit</Link>
+          <Link href="/audits">Start Audit</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/reports">Report builder</Link>
+          <Link href="/tools/screenshot-studio">Inspectra Studio</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/reports">Report Builder</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/automation">Automation</Link>

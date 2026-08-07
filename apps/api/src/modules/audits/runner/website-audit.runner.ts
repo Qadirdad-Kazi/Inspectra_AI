@@ -11,6 +11,8 @@ import { runWebsiteAudit, type WebsiteAuditOutput } from '@inspectra/web-audit-e
 import { Prisma } from '@inspectra/db';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AiIntelligenceService } from '../intelligence/ai-intelligence.service';
+import { BillingService } from '../../billing/billing.service';
+import { refundConsumedAuditCredit } from '../audit-credit-refund';
 
 const STAGES = [
   { name: 'crawl', position: 1 },
@@ -30,6 +32,7 @@ export class WebsiteAuditRunner {
   constructor(
     private readonly prisma: PrismaService,
     private readonly intelligence: AiIntelligenceService,
+    private readonly billing: BillingService,
   ) {}
 
   /** Fire-and-forget async execution with progress persistence. */
@@ -264,6 +267,10 @@ export class WebsiteAuditRunner {
           errorCode: 'WEB_AUDIT_FAILED',
         },
       });
+      const failed = await this.prisma.audit.findUnique({ where: { id: auditId } });
+      if (failed) {
+        await refundConsumedAuditCredit(this.prisma, this.billing, failed);
+      }
       await this.prisma.jobRun.update({
         where: { id: job.id },
         data: {

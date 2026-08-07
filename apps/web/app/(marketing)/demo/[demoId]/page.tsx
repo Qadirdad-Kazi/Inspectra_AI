@@ -49,10 +49,15 @@ export default function DemoReportPage() {
     return (
       <div className="grid min-h-screen place-items-center bg-[#f4f1eb] px-6">
         <div className="text-center">
-          <p className="text-slate-600">Demo not found.</p>
-          <Button asChild className="mt-4">
-            <Link href="/demo">Back to demos</Link>
-          </Button>
+          <p className="text-slate-600">Sample not found — published samples are coming soon.</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button asChild>
+              <Link href="/sign-up">Start Free Audit</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/">Back Home</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -79,7 +84,7 @@ export default function DemoReportPage() {
         </Link>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href="/demo">All demos</Link>
+            <Link href="/demo">Sample Reports</Link>
           </Button>
           <Button asChild>
             <Link href="/sign-up">Start free</Link>

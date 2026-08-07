@@ -13,6 +13,7 @@ import { WebsiteAuditRunner } from './runner/website-audit.runner';
 import { StoreAuditRunner } from './runner/store-audit.runner';
 import { AiIntelligenceService } from './intelligence/ai-intelligence.service';
 import { BillingService } from '../billing/billing.service';
+import { refundConsumedAuditCredit } from './audit-credit-refund';
 import type {
   CreateAssetDto,
   CreateAuditDto,
@@ -192,7 +193,11 @@ export class AuditsService {
       });
     }
 
-    await this.billing.consumeAuditCredit(organizationId, userId);
+    const creditResult = await this.billing.consumeAuditCredit(organizationId, userId);
+    const billingMeta = {
+      creditConsumed: !creditResult.unlimited,
+      creditRefunded: false,
+    };
 
     if (asset.type === AssetType.web) {
       const config = {
@@ -203,6 +208,7 @@ export class AuditsService {
         requestDelayMs: dto.config?.requestDelayMs ?? 300,
         engines: dto.config?.engines,
         targetUrl: asset.identifier,
+        billing: billingMeta,
         ...(dto.config?.options ?? {}),
       };
 
@@ -245,6 +251,7 @@ export class AuditsService {
       modules: dto.config?.modules,
       maxReviews: dto.config?.maxReviews ?? 25,
       storeIdentifier: asset.identifier,
+      billing: billingMeta,
       ...(dto.config?.options ?? {}),
     };
 
@@ -455,6 +462,7 @@ export class AuditsService {
         payload: {},
       },
     });
+    await refundConsumedAuditCredit(this.prisma, this.billing, updated);
     return this.serializeAudit(updated);
   }
 

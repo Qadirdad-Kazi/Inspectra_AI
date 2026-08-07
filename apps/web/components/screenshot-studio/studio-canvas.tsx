@@ -48,6 +48,7 @@ import {
 import { StudioFloatingToolbar } from './studio-floating-toolbar';
 import { matrix3dForQuad, quadToPixels, type Point } from './perspective';
 import screenQuads from './screen-quads.json';
+import { previewArtboardSize } from '@/lib/studio-export';
 
 export type DeviceStyle =
   | 'iphone-17-a'
@@ -202,7 +203,7 @@ export const DEVICE_PRESETS: DevicePreset[] = [
 export const INITIAL_SCREENS: ArtboardScreen[] = [
   {
     id: 'screen-1',
-    name: '01 Hero',
+    name: '01',
     backgroundColor: '#0b1220',
     gradientBackground: 'linear-gradient(160deg, #0b1220 0%, #132033 45%, #1a2740 100%)',
     textColor: '#ffffff',
@@ -210,39 +211,10 @@ export const INITIAL_SCREENS: ArtboardScreen[] = [
     heightPx: 2796,
     elements: [
       {
-        id: 'el-badge',
-        type: 'badge',
-        x: 50,
-        y: 7,
-        text: 'Store-ready frames',
-        color: '#ffffff',
-        zIndex: 5,
-      },
-      {
-        id: 'el-headline',
-        type: 'headline',
-        x: 50,
-        y: 14,
-        text: 'Ship visuals that convert.',
-        color: '#ffffff',
-        fontSize: 22,
-        zIndex: 5,
-      },
-      {
-        id: 'el-subhead',
-        type: 'subhead',
-        x: 50,
-        y: 22,
-        text: 'Drag, align, and export polished App Store & Play screens.',
-        color: '#94a3b8',
-        fontSize: 12,
-        zIndex: 5,
-      },
-      {
         id: 'el-device',
         type: 'device',
         x: 50,
-        y: 68,
+        y: 58,
         deviceStyle: 'iphone-17-b',
         shadowOpacity: 55,
         zIndex: 2,
@@ -310,7 +282,7 @@ export function StudioCanvas({
   setActiveScreenIndex,
   selectedElementId,
   setSelectedElementId,
-  platform: _platform,
+  platform,
   cleanExport = false,
 }: StudioCanvasProps) {
   const [zoomLevel, setZoomLevel] = useState(88);
@@ -592,6 +564,7 @@ export function StudioCanvas({
   });
 
   const renderZoom = cleanExport ? 100 : zoomLevel;
+  const artboard = previewArtboardSize(platform || 'ios');
 
   return (
     <div className="relative flex flex-col gap-4 select-none">
@@ -746,8 +719,8 @@ export function StudioCanvas({
                       }`
                 }`}
                 style={{
-                  width: 360,
-                  height: 680,
+                  width: artboard.width,
+                  height: artboard.height,
                   background: screen.gradientBackground || screen.backgroundColor,
                   color: screen.textColor,
                   transform: `scale(${renderZoom / 100})`,
@@ -804,6 +777,7 @@ export function StudioCanvas({
                     >
                       <ElementView
                         el={el}
+                        cleanExport={cleanExport}
                         editing={editingTextId === el.id}
                         onCommitText={(text) => {
                           updateElement(el.id, { text }, sIdx);
@@ -829,7 +803,8 @@ export function StudioCanvas({
           <button
             type="button"
             onClick={handleAddScreen}
-            className="mt-8 flex h-[680px] w-[360px] shrink-0 flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-white/15 bg-slate-950/40 text-slate-300 transition hover:border-cyan-400/50 hover:bg-slate-900/50 hover:text-white"
+            className="mt-8 flex shrink-0 flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-dashed border-white/15 bg-slate-950/40 text-slate-300 transition hover:border-cyan-400/50 hover:bg-slate-900/50 hover:text-white"
+            style={{ width: artboard.width, height: artboard.height }}
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300">
               <Plus className="h-7 w-7" />
@@ -913,11 +888,13 @@ function IconBtn({
 function ElementView({
   el,
   editing,
+  cleanExport = false,
   onCommitText,
   onCancelEdit,
 }: {
   el: CanvasElement;
   editing: boolean;
+  cleanExport?: boolean;
   onCommitText: (text: string) => void;
   onCancelEdit: () => void;
 }) {
@@ -980,13 +957,13 @@ function ElementView({
   }
 
   if (el.type === 'device') {
-    return <DeviceMockup el={el} />;
+    return <DeviceMockup el={el} cleanExport={cleanExport} />;
   }
 
   return null;
 }
 
-function DeviceMockup({ el }: { el: CanvasElement }) {
+function DeviceMockup({ el, cleanExport = false }: { el: CanvasElement; cleanExport?: boolean }) {
   const preset = DEVICE_PRESETS.find((p) => p.id === el.deviceStyle) ?? DEVICE_PRESETS[0]!;
   const shadow = `drop-shadow(0 22px 28px rgba(0,0,0,${(el.shadowOpacity ?? 55) / 100}))`;
 
@@ -996,6 +973,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
         preset={preset}
         imageUrl={el.imageUrl}
         shadow={shadow}
+        cleanExport={cleanExport}
         imageFit={el.imageFit || 'cover'}
         imageZoom={el.imageZoom ?? 100}
         imageOffsetX={el.imageOffsetX ?? 0}
@@ -1016,6 +994,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
         </div>
         <div className="flex-1 overflow-hidden bg-slate-950">
           <ScreenContent
+            cleanExport={cleanExport}
             imageUrl={el.imageUrl}
             label="Upload web screenshot"
             fill
@@ -1039,6 +1018,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
       >
         <div className="absolute inset-2 overflow-hidden rounded-[12px] bg-black">
           <ScreenContent
+            cleanExport={cleanExport}
             imageUrl={el.imageUrl}
             fill
             imageFit={el.imageFit}
@@ -1059,6 +1039,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
         <div className="w-full overflow-hidden rounded-t-lg border-[8px] border-b-0 border-zinc-700 bg-zinc-900">
           <div className="h-[190px] overflow-hidden bg-black">
             <ScreenContent
+            cleanExport={cleanExport}
               imageUrl={el.imageUrl}
               fill
               imageFit={el.imageFit}
@@ -1087,6 +1068,7 @@ function DeviceMockup({ el }: { el: CanvasElement }) {
       <div className="absolute left-1/2 top-2 z-20 h-1.5 w-16 -translate-x-1/2 rounded-full bg-zinc-700" />
       <div className="absolute inset-[6px] overflow-hidden rounded-[20px] bg-black">
         <ScreenContent
+            cleanExport={cleanExport}
           imageUrl={el.imageUrl}
           fill
           imageFit={el.imageFit}
@@ -1105,6 +1087,7 @@ function OverlayDeviceMockup({
   preset,
   imageUrl,
   shadow,
+  cleanExport = false,
   imageFit = 'cover',
   imageZoom = 100,
   imageOffsetX = 0,
@@ -1115,6 +1098,7 @@ function OverlayDeviceMockup({
   preset: DevicePreset;
   imageUrl?: string;
   shadow: string;
+  cleanExport?: boolean;
   imageFit?: 'cover' | 'contain' | 'fill';
   imageZoom?: number;
   imageOffsetX?: number;
@@ -1177,6 +1161,8 @@ function OverlayDeviceMockup({
         transformOrigin: `${posX}% ${posY}%`,
       }}
     />
+  ) : cleanExport ? (
+    <div className="h-full w-full bg-black" />
   ) : (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-900/90 p-4 text-center">
       <ImageIcon className="h-7 w-7 text-cyan-400" />
@@ -1223,6 +1209,7 @@ function ScreenContent({
   imageUrl,
   label,
   fill,
+  cleanExport = false,
   imageFit = 'cover',
   imageZoom = 100,
   imageOffsetX = 0,
@@ -1233,6 +1220,7 @@ function ScreenContent({
   imageUrl?: string;
   label?: string;
   fill?: boolean;
+  cleanExport?: boolean;
   imageFit?: 'cover' | 'contain' | 'fill';
   imageZoom?: number;
   imageOffsetX?: number;
@@ -1259,6 +1247,9 @@ function ScreenContent({
         }}
       />
     );
+  }
+  if (cleanExport) {
+    return <div className={`h-full w-full bg-black ${fill ? 'min-h-full' : ''}`} />;
   }
   return (
     <div

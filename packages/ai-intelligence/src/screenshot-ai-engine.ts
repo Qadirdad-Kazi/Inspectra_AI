@@ -183,29 +183,35 @@ function storyBeats(params: {
     },
     {
       role: 'trust',
-      headline: 'Security first',
+      headline: clampHeadline(`${appName} clarity`),
       subhead: clampSubhead(
-        'Enterprise-grade protection with transparent audit trails.',
+        shortDesc || 'Straightforward messaging that matches what the product actually does.',
       ),
-      badgeText: 'Secure',
+      badgeText: 'Clear',
     },
     {
       role: 'cta',
-      headline: 'Ready to ship',
-      subhead: clampSubhead('Store-ready frames that convert browsers into installs.'),
-      badgeText: 'Launch',
+      headline: 'Ready for the store',
+      subhead: clampSubhead(
+        shortDesc
+          ? `Highlight ${appName} with frames built around your real screenshots.`
+          : `Build frames around ${appName} with your real screenshots.`,
+      ),
+      badgeText: 'Next',
     },
     {
       role: 'social-proof',
-      headline: 'Loved by teams',
-      subhead: clampSubhead('Clean creative that mirrors how people actually use the app.'),
-      badgeText: 'Teams',
+      headline: clampHeadline(`Why ${appName}`),
+      subhead: clampSubhead(
+        finding || 'Lead with the benefit users notice in the first two seconds.',
+      ),
+      badgeText: 'Focus',
     },
     {
       role: 'feature',
-      headline: 'Stay in sync',
-      subhead: clampSubhead('Updates across devices without slowing you down.'),
-      badgeText: 'Fast',
+      headline: 'Stay consistent',
+      subhead: clampSubhead('Same story across every store frame — no filler claims.'),
+      badgeText: 'Polish',
     },
   ];
 }

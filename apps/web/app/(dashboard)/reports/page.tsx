@@ -120,14 +120,14 @@ export default function ReportsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
         <p className="text-muted">
-          Professional report builder with executive summary, category scores, recommendations, and
-          effort estimates. Export JSON, HTML, CSV, SARIF, or print-ready PDF HTML.
+          Professional Report Builder with executive summary, category scores, recommendations, and
+          effort estimates. Export JSON, HTML, CSV, SARIF, or printable HTML (for PDF).
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Report builder</CardTitle>
+          <CardTitle>Report Builder</CardTitle>
           <CardDescription>Select a completed audit, preview, then export.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -151,7 +151,7 @@ export default function ReportsPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="format">Export format</Label>
+              <Label htmlFor="format">Export Format</Label>
               <select
                 id="format"
                 className="flex h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
@@ -160,7 +160,7 @@ export default function ReportsPage() {
               >
                 {FORMATS.map((f) => (
                   <option key={f} value={f}>
-                    {f.toUpperCase()}
+                    {f === 'pdf' ? 'Printable HTML (PDF)' : f.toUpperCase()}
                   </option>
                 ))}
               </select>
@@ -179,7 +179,7 @@ export default function ReportsPage() {
                 Preview
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Generating…' : 'Generate export'}
+                {loading ? 'Generating…' : 'Generate Export'}
               </Button>
             </div>
           </form>
@@ -223,7 +223,7 @@ export default function ReportsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Generated reports</CardTitle>
+          <CardTitle>Generated Reports</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {reports.length === 0 ? (

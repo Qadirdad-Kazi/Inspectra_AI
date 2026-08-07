@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { scoreBand, toTenScale } from '@/lib/demo-reports';
 
@@ -346,6 +347,16 @@ export function AuditReportView({
               </div>
               <p className="mt-2 text-xs text-slate-500">
                 Numbered frames map to the first priority actions on the right.
+              </p>
+              <p className="mt-3 rounded-lg border border-cyan-200/80 bg-cyan-50/80 px-3 py-2 text-xs leading-relaxed text-cyan-950">
+                Need stronger store frames? Build audit-safe creatives in{' '}
+                <Link
+                  href="/tools/screenshot-studio"
+                  className="font-semibold underline underline-offset-2"
+                >
+                  Inspectra Studio
+                </Link>
+                .
               </p>
             </div>
           ) : null}

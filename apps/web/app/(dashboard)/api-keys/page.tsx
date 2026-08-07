@@ -97,7 +97,7 @@ export default function ApiManagementPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Create key</CardTitle>
+          <CardTitle>Create Key</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="flex flex-wrap items-end gap-3" onSubmit={create}>
@@ -105,14 +105,14 @@ export default function ApiManagementPage() {
               <Label htmlFor="name">Name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
-            <Button type="submit">Create</Button>
+            <Button type="submit">Create Key</Button>
           </form>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Active keys</CardTitle>
+          <CardTitle>Active Keys</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {keys.length === 0 ? (

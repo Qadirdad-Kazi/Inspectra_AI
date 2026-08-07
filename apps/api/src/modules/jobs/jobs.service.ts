@@ -7,15 +7,17 @@ import type {
 } from './dto/job.dto';
 
 /**
- * Job producer for SaaS core. Audit engines are not implemented yet —
- * enqueue methods acknowledge the request without requiring Redis.
+ * Legacy deferred job producer. Live audits run via WebsiteAuditRunner / StoreAuditRunner
+ * (in-process). Do not use this for production billing paths until Redis/BullMQ is wired.
  */
 @Injectable()
 export class JobsService {
   private readonly logger = new Logger(JobsService.name);
 
   async enqueueRunAudit(input: EnqueueAuditJobInput): Promise<JobRunResponseDto> {
-    this.logger.log(`Audit job deferred (engines not enabled) auditId=${input.auditId}`);
+    this.logger.warn(
+      `Deferred queue path unused — audits run in-process. auditId=${input.auditId}`,
+    );
     return {
       id: `jobrun_deferred_${input.auditId}`,
       type: 'run_audit',

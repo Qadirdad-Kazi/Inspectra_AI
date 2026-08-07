@@ -1,5 +1,7 @@
 /**
- * Keep in sync with apps/api/src/modules/billing/studio-plans.ts
+ * Inspectra Studio (screenshot / store creative) access plans.
+ * Separate product from audit credit packs — keep in sync with
+ * apps/api/src/modules/billing/studio-plans.ts
  */
 export type StudioPlan = {
   id: string;
@@ -14,27 +16,28 @@ export type StudioPlan = {
   maxCustomDays?: number;
 };
 
+/** Three Screenshot Studio packages — not audit credits */
 export const STUDIO_PLANS: StudioPlan[] = [
   {
     id: 'studio-weekly',
-    name: 'Weekly',
+    name: 'Studio Weekly',
     interval: 'week',
     durationDays: 7,
     priceUsd: 4.99,
-    blurb: 'Full Studio access for 7 days — ideal for a launch week.',
+    blurb: 'Full Screenshot Studio access for 7 days — launch-week creatives.',
   },
   {
     id: 'studio-monthly',
-    name: 'Monthly',
+    name: 'Studio Monthly',
     interval: 'month',
     durationDays: 30,
     priceUsd: 9.99,
-    blurb: 'Best value for ongoing store creative production.',
+    blurb: 'Best value for ongoing App Store / Play Store screenshot production.',
     highlighted: true,
   },
   {
     id: 'studio-custom',
-    name: 'Custom',
+    name: 'Studio Custom',
     interval: 'custom',
     durationDays: 1,
     priceUsd: 2.99,

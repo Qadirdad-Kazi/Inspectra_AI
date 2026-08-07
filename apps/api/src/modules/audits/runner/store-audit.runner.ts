@@ -15,6 +15,8 @@ import {
 import { Prisma } from '@inspectra/db';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { AiIntelligenceService } from '../intelligence/ai-intelligence.service';
+import { BillingService } from '../../billing/billing.service';
+import { refundConsumedAuditCredit } from '../audit-credit-refund';
 
 const STAGES = [
   { name: 'fetch', position: 1 },
@@ -46,6 +48,7 @@ export class StoreAuditRunner {
   constructor(
     private readonly prisma: PrismaService,
     private readonly intelligence: AiIntelligenceService,
+    private readonly billing: BillingService,
   ) {}
 
   enqueue(auditId: string): void {
@@ -325,6 +328,10 @@ export class StoreAuditRunner {
         errorCode: 'STORE_AUDIT_FAILED',
       },
     });
+    const failed = await this.prisma.audit.findUnique({ where: { id: auditId } });
+    if (failed) {
+      await refundConsumedAuditCredit(this.prisma, this.billing, failed);
+    }
     await this.prisma.jobRun.update({
       where: { id: jobId },
       data: {

@@ -250,7 +250,7 @@ export default function AuditDetailPage() {
       },
     };
     saveCustomDemo(demo);
-    toast.success('Saved to client-side demos');
+    toast.success('Saved as a local draft on this device (not published)');
   }
 
   async function postComment() {
@@ -293,7 +293,7 @@ export default function AuditDetailPage() {
                 </Button>
               ) : null}
               <Button variant="outline" size="sm" onClick={saveAsDemo}>
-                Save as demo
+                Save draft locally
               </Button>
               <Button variant="outline" size="sm" onClick={() => void rerunIntelligence()}>
                 Re-run AI

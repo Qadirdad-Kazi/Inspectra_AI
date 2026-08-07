@@ -11,23 +11,15 @@ export const competitorsModule: StoreModule = {
     let score = 100;
 
     if (competitors.length === 0) {
+      // Weight 0 so idle module does not drag overall score with a fake mid score.
       return {
         moduleId: 'competitors',
         label: 'Competitor comparison',
-        score: 70,
-        weight: this.weight,
-        findings: [
-          {
-            fingerprint: fingerprint(['comp', 'none', listing.storeId]),
-            title: 'No competitors supplied',
-            description:
-              'Pass competitorIds in the audit config to unlock comparative ASO/rating analysis.',
-            severity: 'info',
-            category: 'competitors',
-          },
-        ],
-        metrics: { competitorCount: 0 },
-        summary: 'Competitor module idle — provide competitor store IDs to compare.',
+        score: 100,
+        weight: 0,
+        findings: [],
+        metrics: { competitorCount: 0, skipped: true },
+        summary: 'Competitor comparison skipped — no peers selected for this audit.',
       };
     }
 
