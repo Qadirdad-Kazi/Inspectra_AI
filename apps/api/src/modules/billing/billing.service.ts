@@ -277,9 +277,12 @@ export class BillingService {
   async userHasUnlimitedAudits(userId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true },
+      select: { email: true, isPlatformAdmin: true },
     });
-    return isUnlimitedAuditEmail(user?.email);
+    if (!user) return false;
+    // Platform (app) admins always bypass credits — same as Studio.
+    if (user.isPlatformAdmin) return true;
+    return isUnlimitedAuditEmail(user.email);
   }
 
   /** Consume one credit for a new audit. Unlimited allowlist users skip credits. */
